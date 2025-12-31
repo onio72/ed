@@ -79,7 +79,7 @@
                 <!-- Creador de Procesos -->
                 <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
                     <input id="newProcessTitle" type="text" placeholder="Nuevo Proceso..." class="bg-transparent px-3 py-1 text-sm outline-none w-40">
-                    <input id="newProcessColor" type="color" value="#6366f1" class="w-8 h-8 rounded-lg border-none cursor-pointer bg-transparent p-0">
+                    <input id="newProcessColor" type="color" value="#6366f1" onchange="this.blur()" class="w-8 h-8 rounded-lg border-none cursor-pointer bg-transparent p-0">
                     <button onclick="addProcess()" class="ml-1 bg-white hover:bg-slate-50 text-slate-700 p-2 rounded-lg transition-colors border border-slate-200 shadow-sm">
                         <i class="ph ph-plus-circle"></i>
                     </button>
@@ -102,8 +102,8 @@
                 <button onclick="exportData()" title="Exportar JSON" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors border border-slate-200">
                     <i class="ph-bold ph-export"></i>
                 </button>
-                <label class="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors border border-slate-200 cursor-pointer">
-                    <i class="ph-bold ph-import"></i>
+                <label title="Importar JSON" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors border border-slate-200 cursor-pointer">
+                    <i class="ph-bold ph-export inline-block rotate-180"></i>
                     <input type="file" accept=".json" onchange="importData(event)" class="hidden">
                 </label>
             </div>
@@ -279,8 +279,14 @@
                     <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTaskDone('${task.id}', '${locationId}')" class="mt-1.5 rounded text-indigo-600 focus:ring-indigo-500">
                     <div class="flex-1 min-w-0">
                         <div contenteditable="true" onblur="updateTaskTitle('${task.id}', '${locationId}', this.innerText)" class="text-sm font-bold text-slate-800 outline-none truncate block ${task.done ? 'line-through text-slate-500' : ''}">${task.title}</div>
-                        <div contenteditable="true" onblur="updateTaskResp('${task.id}', '${locationId}', this.innerText)" class="text-[11px] font-semibold text-slate-500 flex items-center gap-1 uppercase tracking-wider outline-none">
-                            <i class="ph ph-user"></i> ${task.responsible || 'Responsable...'}
+                        <div class="text-[11px] font-semibold text-slate-500 flex items-center gap-1 uppercase tracking-wider outline-none">
+                            <i class="ph ph-user"></i> 
+                            <span contenteditable="true" 
+                                  onfocus="if(this.innerText.trim() === 'Responsable...') this.innerText = ''" 
+                                  onblur="if(this.innerText.trim() === '') this.innerText = 'Responsable...'; updateTaskResp('${task.id}', '${locationId}', this.innerText)" 
+                                  class="flex-1 block truncate">
+                                ${task.responsible || 'Responsable...'}
+                            </span>
                         </div>
                     </div>
                     <button onclick="confirmDeleteTask('${task.id}', '${locationId}')" class="text-slate-300 hover:text-red-500">
@@ -366,7 +372,9 @@
 
         function updateTaskResp(taskId, locId, val) {
             const t = findTask(taskId, locId);
-            if(t && t.task) t.task.responsible = val;
+            if(t && t.task) {
+                t.task.responsible = (val.trim() === 'Responsable...') ? '' : val.trim();
+            }
             saveToLocalStorage();
         }
 
