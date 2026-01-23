@@ -33,8 +33,9 @@
             .no-print { display: none !important; }
             body { font-size: 10pt; -webkit-print-color-adjust: exact; }
             .tab-content { display: block !important; }
-            #tab-gestion { display: block !important; }
-            #tab-calendario, #tab-admin, #tab-estadistica { display: none !important; }
+            /* Ocultamos todo excepto el informe si estamos en esa pestaña */
+            #tab-gestion, #tab-calendario, #tab-admin, #tab-estadistica { display: none !important; }
+            #tab-informe { display: block !important; }
         }
         .drag-active { border-color: #0284c7; background-color: #f0f9ff; }
         
@@ -64,7 +65,7 @@
                         <h1 class="text-xl font-bold text-gray-900">Gestión de Permisos</h1>
                         <p class="text-xs text-gray-500 flex items-center gap-2">
                             Sistema Local de Concurrencia 
-                            <span class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 text-gray-600 rounded text-[10px] font-mono font-bold">v1.5</span>
+                            <span class="px-1.5 py-0.5 bg-gray-100 border border-gray-200 text-gray-600 rounded text-[10px] font-mono font-bold">v1.7</span>
                         </p>
                     </div>
                 </div>
@@ -76,12 +77,15 @@
             </div>
 
             <!-- PESTAÑAS -->
-            <nav class="flex space-x-8 -mb-px overflow-x-auto no-print">
+            <nav class="flex space-x-8 -mb-px overflow-x-auto no-print px-2">
                 <button onclick="app.cambiarPestana('gestion')" id="nav-gestion" class="tab-btn whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm border-education-600 text-education-600">
                     <i data-lucide="list" class="inline w-4 h-4 mr-1"></i> Gestión
                 </button>
                 <button onclick="app.cambiarPestana('estadistica')" id="nav-estadistica" class="tab-btn whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
                     <i data-lucide="bar-chart-2" class="inline w-4 h-4 mr-1"></i> Estadística
+                </button>
+                <button onclick="app.cambiarPestana('informe')" id="nav-informe" class="tab-btn whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i data-lucide="file-text" class="inline w-4 h-4 mr-1"></i> Informe JE
                 </button>
                 <button onclick="app.cambiarPestana('calendario')" id="nav-calendario" class="tab-btn whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
                     <i data-lucide="calendar" class="inline w-4 h-4 mr-1"></i> Calendario
@@ -117,11 +121,9 @@
                     <table class="w-full text-sm text-left">
                         <thead class="bg-gray-100 text-gray-600 uppercase text-xs font-semibold select-none">
                             <tr>
-                                <!-- Nueva columna de Orden Diario (Prelación) -->
                                 <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-200 w-24" onclick="app.ordenar('rangoOrdenDiario')" title="Orden de prelación específico para este día">
                                     Orden Día <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i>
                                 </th>
-                                
                                 <th class="px-4 py-3 cursor-pointer hover:bg-gray-200" onclick="app.ordenar('estadoManual')">Estado <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i></th>
                                 <th class="px-4 py-3 cursor-pointer hover:bg-gray-200" onclick="app.ordenar('nombre')">Solicitante <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i></th>
                                 <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-200" onclick="app.ordenar('fSolicitud')">F. Solicitud <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i></th>
@@ -134,15 +136,13 @@
                                 <th class="px-4 py-3 text-right">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaCuerpo" class="divide-y divide-gray-200">
-                            <!-- JS -->
-                        </tbody>
+                        <tbody id="tablaCuerpo" class="divide-y divide-gray-200"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ================= PESTAÑA 2: ESTADÍSTICA (NUEVA) ================= -->
+        <!-- ================= PESTAÑA 2: ESTADÍSTICA ================= -->
         <div id="tab-estadistica" class="tab-content hidden space-y-4">
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
                 <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -164,7 +164,47 @@
                                 <th class="px-6 py-3 text-center">Estado Límite</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaEstadistica" class="divide-y divide-gray-200">
+                        <tbody id="tablaEstadistica" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PESTAÑA 3: INFORME JE (NUEVA) ================= -->
+        <div id="tab-informe" class="tab-content hidden space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 no-print flex flex-col md:flex-row gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Fecha Inicio</label>
+                    <input type="date" id="infDateStart" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-education-600 focus:border-education-600 block w-full p-2" onchange="app.renderizarInformeJE()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Fecha Fin</label>
+                    <input type="date" id="infDateEnd" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-education-600 focus:border-education-600 block w-full p-2" onchange="app.renderizarInformeJE()">
+                </div>
+                <div class="flex-grow"></div>
+                <button onclick="app.enviarCorreoJE()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-800 shadow-sm transition-colors">
+                    <i data-lucide="mail" class="w-4 h-4"></i> Enviar Email
+                </button>
+                <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-education-600 rounded-lg hover:bg-education-800 shadow-sm transition-colors">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Informe
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-800">Informe de Permisos Aprobados</h3>
+                    <p class="text-xs text-gray-500" id="infRangoTexto">Rango seleccionado</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-gray-600 uppercase text-xs font-semibold">
+                            <tr>
+                                <th class="px-6 py-3 w-40">Fecha</th>
+                                <th class="px-6 py-3">Profesor</th>
+                                <th class="px-6 py-3 text-center">Días Disfrutados (Acumulado)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaInforme" class="divide-y divide-gray-200">
                             <!-- JS -->
                         </tbody>
                     </table>
@@ -172,40 +212,30 @@
             </div>
         </div>
 
-        <!-- ================= PESTAÑA 3: CALENDARIO ================= -->
+        <!-- ================= PESTAÑA 4: CALENDARIO ================= -->
         <div id="tab-calendario" class="tab-content hidden space-y-4">
-            
-            <!-- Controles Calendario -->
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-2">
                     <button onclick="app.calNavegar(-1)" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="chevron-left"></i></button>
                     <h2 id="calTitulo" class="text-lg font-bold w-48 text-center">Enero 2026</h2>
                     <button onclick="app.calNavegar(1)" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="chevron-right"></i></button>
                 </div>
-                
                 <div class="flex bg-gray-100 rounded p-1 text-xs font-medium">
                     <button onclick="app.calCambiarVista('mes')" id="view-mes" class="px-3 py-1 bg-white shadow rounded text-gray-800">Mes</button>
                     <button onclick="app.calCambiarVista('trimestre')" id="view-trimestre" class="px-3 py-1 text-gray-500 hover:text-gray-900">Trimestre</button>
                     <button onclick="app.calCambiarVista('anio')" id="view-anio" class="px-3 py-1 text-gray-500 hover:text-gray-900">Año</button>
                 </div>
-
                 <div class="flex gap-4 text-xs">
                     <div class="flex items-center gap-1"><div class="w-3 h-3 bg-green-100 border border-green-300 rounded"></div> Aprobadas</div>
                     <div class="flex items-center gap-1"><div class="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div> Pendientes</div>
                     <div class="flex items-center gap-1"><div class="w-3 h-3 bg-red-100 border border-red-300 rounded"></div> >5 Solicitantes</div>
                 </div>
             </div>
-
-            <!-- Contenedor del Grid -->
-            <div id="calContainer" class="space-y-6">
-                <!-- Se inyectan los meses aquí -->
-            </div>
+            <div id="calContainer" class="space-y-6"></div>
         </div>
 
-        <!-- ================= PESTAÑA 4: ADMINISTRACIÓN ================= -->
+        <!-- ================= PESTAÑA 5: ADMINISTRACIÓN ================= -->
         <div id="tab-admin" class="tab-content hidden space-y-6">
-            
-            <!-- Configuración -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold mb-4 text-gray-900 border-b pb-2">Configuración Anual</h3>
                 <div class="flex items-center gap-4">
@@ -220,23 +250,17 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Importar Datos -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold mb-4 text-gray-900 border-b pb-2 flex items-center gap-2">
                     <i data-lucide="upload-cloud"></i> Carga de Datos
                 </h3>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Arrastrar Excel -->
                     <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors hover:bg-gray-50">
                         <i data-lucide="file-spreadsheet" class="h-10 w-10 text-green-600 mb-3"></i>
                         <p class="text-sm font-medium text-gray-700">Arrastra tu Excel (.xlsx) aquí</p>
                         <button class="mt-2 text-xs bg-white border border-gray-300 px-3 py-1 rounded shadow-sm hover:bg-gray-100">Seleccionar Archivo</button>
                         <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls" onchange="app.procesarExcel(this.files[0])">
                     </div>
-
-                    <!-- Pegar Texto -->
                     <div class="flex flex-col h-full">
                         <textarea id="pasteArea" class="flex-grow w-full p-3 text-xs font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-education-600 mb-2" 
                             placeholder="Opción B: Copia las celdas en tu Excel (Ctrl+C) y pégalas aquí (Ctrl+V)..."></textarea>
@@ -246,8 +270,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Backup y Seguridad -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold mb-4 text-gray-900 border-b pb-2 flex items-center gap-2">
                     <i data-lucide="save"></i> Copia de Seguridad
@@ -256,14 +278,11 @@
                     <button onclick="app.descargarJSON()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm">
                         <i data-lucide="download"></i> Descargar Copia de Seguridad (JSON)
                     </button>
-                    
                     <button onclick="document.getElementById('jsonInput').click()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm">
                         <i data-lucide="upload"></i> Restaurar Copia
                         <input type="file" id="jsonInput" class="hidden" accept=".json" onchange="app.cargarJSON(this)">
                     </button>
-
                     <div class="flex-grow"></div>
-
                     <button onclick="app.borrarTodo()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100">
                         <i data-lucide="trash-2"></i> Borrar Todo (Reset de Fábrica)
                     </button>
@@ -281,11 +300,30 @@
             constructor() {
                 this.datos = [];
                 this.config = { letraSorteo: 'H', maxDiasPersona: 2, maxCupoDia: 5 };
-                this.estadoVista = { tab: 'gestion', calVista: 'mes', calFecha: new Date(), sortCol: 'fSolicitud', sortAsc: true };
+                this.estadoVista = { 
+                    tab: 'gestion', 
+                    calVista: 'mes', 
+                    calFecha: new Date(), 
+                    sortCol: 'fSolicitud', 
+                    sortAsc: true,
+                    infStart: '', // Inicializado en init
+                    infEnd: '' 
+                };
                 this.init();
             }
 
             init() {
+                // Inicializar fechas informe (Hoy y Hoy+7)
+                const today = new Date();
+                const nextWeek = new Date();
+                nextWeek.setDate(today.getDate() + 7);
+                this.estadoVista.infStart = today.toISOString().split('T')[0];
+                this.estadoVista.infEnd = nextWeek.toISOString().split('T')[0];
+                
+                // Asignar al DOM si existe (se reasigna en cargarDeLocalStorage si hace falta)
+                if($('infDateStart')) $('infDateStart').value = this.estadoVista.infStart;
+                if($('infDateEnd')) $('infDateEnd').value = this.estadoVista.infEnd;
+
                 this.cargarDeLocalStorage();
                 this.setupDragAndDrop();
                 this.cambiarPestana('gestion');
@@ -312,6 +350,7 @@
                 if (tabName === 'calendario') this.renderizarCalendario();
                 if (tabName === 'gestion') this.renderizarTabla();
                 if (tabName === 'estadistica') this.renderizarEstadisticas();
+                if (tabName === 'informe') this.renderizarInformeJE();
                 lucide.createIcons();
             }
 
@@ -420,7 +459,6 @@
                             if(h.includes('estado')) obj['Estado'] = row[idx];
                         });
                     } else {
-                        // Fallback orden visual común
                         obj['Estado'] = row[0];
                         obj['Solicitud'] = row[2];
                         obj['Nombre'] = row[4];
@@ -439,7 +477,6 @@
                     return k ? row[k] : null;
                 };
 
-                // PRE-CÁLCULO DE DÍAS CONSUMIDOS PARA ALERTAS
                 const usoActual = {};
                 this.datos.forEach(d => {
                     if (d.estadoManual !== 'Denegada') {
@@ -467,7 +504,6 @@
                     let current = new Date(fIni);
                     const end = new Date(fFin);
                     
-                    // Fallback para fechas inválidas (inicio > fin)
                     if (current > end) { 
                         const diaISO = current.toISOString();
                         this.intentarInsertar(nom, fSol, diaISO, est, usoActual, alertasLimite) ? insertedCount++ : ignoredCount++;
@@ -493,7 +529,6 @@
                 const existe = this.datos.some(d => d.nombre === nom && d.fInicio === diaISO);
                 if (!existe) {
                     const k = nom.toLowerCase();
-                    // ID Seguro con prefijo
                     const newId = 'id_' + Date.now().toString(36) + Math.random().toString(36).substr(2);
                     
                     this.datos.push({
@@ -505,14 +540,13 @@
                         estadoManual: est === 'Aprobada' ? 'Aprobada' : (est === 'Denegada' ? 'Denegada' : 'Pendiente')
                     });
                     
-                    // Actualizamos contador temporal para detectar si se pasa con ESTA importación
                     usoActual[k] = (usoActual[k] || 0) + 1;
                     if (usoActual[k] > this.config.maxDiasPersona) {
                         alertasLimite.add(nom);
                     }
-                    return true; // Insertado
+                    return true; 
                 }
-                return false; // Ignorado
+                return false;
             }
 
             parseDate(val) {
@@ -565,7 +599,6 @@
                     });
                 });
 
-                // Resumen Orden
                 items.forEach(i => {
                     const ranks = Object.values(i.ordenDiarioPorDia);
                     if (ranks.length > 0) {
@@ -584,21 +617,19 @@
                 items.forEach(i => {
                     if(i.fSolicitud) {
                         const diff = Math.ceil((hoy - new Date(i.fSolicitud)) / (86400000));
-                        
-                        // LOGICA CORREGIDA: Solo calcular plazo si está pendiente
                         if(i.estadoManual === 'Pendiente') {
                             i.diasTranscurridos = diff;
                             if(diff > 9) i.alertas.push("Fuera de plazo (>9d)");
                             else if(diff >= 6) i.alertas.push("Riesgo plazo");
                         } else {
-                            i.diasTranscurridos = null; // No aplica plazo
+                            i.diasTranscurridos = null; 
                         }
                     }
                     
                     if(i.estadoManual !== 'Denegada') {
                         const k = i.nombre.toLowerCase();
                         const usados = diasPersona[k] || 0;
-                        const nuevos = 1; // 1 registro = 1 día
+                        const nuevos = 1; 
                         if((usados + nuevos) > this.config.maxDiasPersona) {
                             i.alertas.push(`Excede anuales (${usados + nuevos}/${this.config.maxDiasPersona})`);
                         }
@@ -653,6 +684,7 @@
                 if(this.estadoVista.tab === 'gestion') this.renderizarTabla();
                 if(this.estadoVista.tab === 'calendario') this.renderizarCalendario();
                 if(this.estadoVista.tab === 'estadistica') this.renderizarEstadisticas();
+                if(this.estadoVista.tab === 'informe') this.renderizarInformeJE();
             }
 
             renderizarTabla() {
@@ -672,8 +704,6 @@
                         vB = b.peorOrden || 0;
                     }
                     else if (col === 'diasTranscurridos') {
-                        // Manejo específico para Plazo: tratar null (resueltos) como un valor muy bajo
-                        // para que siempre aparezcan al final en orden descendente (mostrar urgentes primero)
                         const valA = (a[col] === null || a[col] === undefined) ? -999 : a[col];
                         const valB = (b[col] === null || b[col] === undefined) ? -999 : b[col];
                         vA = valA;
@@ -694,7 +724,6 @@
 
                 items.forEach(item => {
                     const tr = document.createElement('tr');
-                    
                     let bg = 'bg-white hover:bg-gray-50';
                     let border = 'border-l-4 border-l-gray-300'; 
                     let textClass = 'text-gray-900';
@@ -799,6 +828,113 @@
                     `;
                     tbody.appendChild(tr);
                 });
+            }
+
+            renderizarInformeJE() {
+                // Leer fechas del DOM
+                const startStr = $('infDateStart').value;
+                const endStr = $('infDateEnd').value;
+                if (!startStr || !endStr) return;
+
+                // Actualizar estado
+                this.estadoVista.infStart = startStr;
+                this.estadoVista.infEnd = endStr;
+
+                const start = new Date(startStr); start.setHours(0,0,0,0);
+                const end = new Date(endStr); end.setHours(0,0,0,0);
+
+                $('infRangoTexto').innerText = `Periodo: ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+
+                // 1. Agrupar TODAS las aprobadas por profesor para calcular el acumulado histórico
+                const historiaProfesor = {}; 
+                const aprobadas = this.datos.filter(d => d.estadoManual === 'Aprobada');
+
+                // Ordenar por fecha globalmente para cada profesor
+                aprobadas.sort((a,b) => new Date(a.fInicio) - new Date(b.fInicio));
+
+                aprobadas.forEach(item => {
+                    if (!historiaProfesor[item.nombre]) historiaProfesor[item.nombre] = 0;
+                    // Incrementamos contador
+                    historiaProfesor[item.nombre]++;
+                    // Guardamos el "número de día" en este item temporalmente
+                    // (Nota: esto solo sirve si no hay concurrencia de lectura, en JS un hilo es seguro)
+                    item._acumuladoTemp = historiaProfesor[item.nombre];
+                });
+
+                // 2. Filtrar las que caen en el rango seleccionado
+                const itemsEnRango = aprobadas.filter(item => {
+                    const d = new Date(item.fInicio);
+                    d.setHours(0,0,0,0);
+                    return d >= start && d <= end;
+                });
+
+                // 3. Ordenar para la tabla (Por fecha, luego nombre)
+                itemsEnRango.sort((a,b) => {
+                    const da = new Date(a.fInicio);
+                    const db = new Date(b.fInicio);
+                    if (da - db !== 0) return da - db;
+                    return a.nombre.localeCompare(b.nombre);
+                });
+
+                // 4. Renderizar
+                const tbody = $('tablaInforme');
+                tbody.innerHTML = '';
+
+                if (itemsEnRango.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay permisos aprobados en este periodo.</td></tr>';
+                    return;
+                }
+
+                itemsEnRango.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 border-b border-gray-100";
+                    const fmt = d => new Date(d).toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'2-digit'});
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-mono text-gray-600">${fmt(item.fInicio)}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${item.nombre}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm">
+                                ${item._acumuladoTemp}º
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            enviarCorreoJE() {
+                const startStr = $('infDateStart').value;
+                const endStr = $('infDateEnd').value;
+                if(!startStr || !endStr) return;
+
+                const start = new Date(startStr).toLocaleDateString('es-ES');
+                const end = new Date(endStr).toLocaleDateString('es-ES');
+                
+                const subject = `Días de permiso concedidos entre ${start} y ${end}`;
+                
+                let body = `INFORME DE PERMISOS APROBADOS\n`;
+                body += `Periodo: ${start} - ${end}\n\n`;
+                
+                // Extraer datos de la tabla visualizada
+                const rows = document.querySelectorAll('#tablaInforme tr');
+                
+                if (rows.length === 0 || (rows.length === 1 && rows[0].innerText.includes('No hay permisos'))) {
+                    body += "No hay permisos aprobados en este periodo.";
+                } else {
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length === 3) {
+                            // Formato simple de texto
+                            const fecha = cells[0].innerText.trim();
+                            const prof = cells[1].innerText.trim();
+                            const dias = cells[2].innerText.trim();
+                            body += `- ${fecha}: ${prof} (Día acumulado: ${dias})\n`;
+                        }
+                    });
+                }
+
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }
 
             // --- CALENDARIO ---
