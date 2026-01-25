@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JefaturaFlow v1.11 "Email Backup"</title>
+    <title>JefaturaFlow v1.12 "Timestamp Backup"</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
@@ -82,7 +82,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-slate-800 leading-none">Jefatura<span class="text-indigo-600">Flow</span></h1>
-                    <span class="text-[9px] font-black text-white bg-indigo-500 px-2 py-0.5 rounded mt-1 inline-block uppercase tracking-widest">v1.11 Email Backup</span>
+                    <span class="text-[9px] font-black text-white bg-indigo-500 px-2 py-0.5 rounded mt-1 inline-block uppercase tracking-widest">v1.12 Timestamp Backup</span>
                 </div>
             </div>
 
@@ -704,13 +704,14 @@
         }
 
 
-        // --- NUEVA FUNCIÓN DE EXPORTACIÓN CON EMAIL ---
+        // --- NUEVA FUNCIÓN DE EXPORTACIÓN CON EMAIL Y HORA ---
         function exportData() { 
-            // 1. Preparar archivo y nombre con fecha
+            // 1. Preparar archivo y nombre con fecha y hora
             const now = new Date();
             const dateStr = now.toLocaleDateString('es-ES').replace(/\//g, '-');
             const timeStr = now.toLocaleTimeString('es-ES').replace(/:/g, '.');
-            const fileName = `JefaturaFlow_Backup_${dateStr}.json`;
+            // AÑADIDO: Se incluye timeStr en el nombre del archivo
+            const fileName = `JefaturaFlow_Backup_${dateStr}_${timeStr}.json`;
             
             const b = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' }); 
             const a = document.createElement('a'); 
