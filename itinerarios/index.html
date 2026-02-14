@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Itinerarios Educativos - IES El Majuelo (Completo)</title>
+    <title>Itinerarios Educativos - IES El Majuelo (Estable con Filtros)</title>
     
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
@@ -42,8 +42,9 @@
         h1 { margin: 0; font-size: 24px; color: #2c3e50; }
         h2 { margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d; font-weight: normal; }
         .version-tag { 
-            display: inline-block; background: #ffebee; color: #c62828; 
+            display: inline-block; background: #e8f5e9; color: #2e7d32; 
             padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px;
+            border: 1px solid #a5d6a7;
         }
 
         /* LEYENDA */
@@ -55,7 +56,7 @@
         .dot.bach { background-color: #E8F5E9; border-color: #4CAF50; }
         .dot.fp { background-color: #FFF3E0; border-color: #FF9800; }
         .dot.adultos { background-color: #F3E5F5; border-color: #9C27B0; }
-        .dot.prueba { background-color: #F5F5F5; border-color: #9E9E9E; } /* Nuevo color Pruebas */
+        .dot.prueba { background-color: #F5F5F5; border-color: #9E9E9E; }
         .dot.pau { background-color: #FFEBEE; border-color: #EF5350; }
         .dot.salida { background-color: #ECEFF1; border-color: #607D8B; }
         .dot.externo { background-color: #f5f5f5; border-color: #999; border-style: dashed; }
@@ -80,19 +81,51 @@
         }
         button:hover { background: #f5f5f5; color: #000; }
 
-        /* PANEL DE CONFIGURACIÓN DE ZONA */
-        #zone-config {
+        /* PANEL DE FILTRO (Derecha Arriba) */
+        #filter-panel {
             position: absolute;
             top: 90px;
             right: 20px;
-            width: 200px;
+            width: 250px;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 15;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        #filter-panel h3 { margin: 0 0 10px 0; font-size: 14px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+        select:focus { outline: none; border-color: #2196F3; }
+
+        /* PANEL DE CONFIGURACIÓN DE ZONA (Debajo del filtro) */
+        #zone-config {
+            position: absolute;
+            top: 200px; /* Ajustado para estar debajo del filtro */
+            right: 20px;
+            width: 250px;
             background: rgba(255, 255, 255, 0.95);
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 15;
+            z-index: 14;
             font-size: 13px;
+            display: none; /* Oculto por defecto para limpiar la vista, se puede reactivar si se quiere editar */
+        }
+        .config-toggle {
+            font-size: 11px; color: #999; text-align: right; cursor: pointer; margin-top: 5px; text-decoration: underline;
         }
         #zone-config h3 { margin: 0 0 10px 0; font-size: 14px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .input-group { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -103,7 +136,7 @@
             #header { flex-direction: column; align-items: flex-start; }
             .titles { max-width: 100%; margin-bottom: 10px; }
             .legend { width: 100%; }
-            #zone-config { top: auto; bottom: 70px; right: 20px; width: 180px; }
+            #filter-panel { top: auto; bottom: 80px; right: 20px; width: 200px; }
         }
     </style>
 </head>
@@ -111,8 +144,8 @@
 
     <div id="header">
         <div class="titles">
-            <h1>Itinerarios Educativos – IES El Majuelo <span class="version-tag">COMPLETO</span></h1>
-            <h2>Incluye PAU independiente y oferta externa (Artes, otros Ciclos).</h2>
+            <h1>Itinerarios Educativos – IES El Majuelo <span class="version-tag">ESTABLE</span></h1>
+            <h2>Sistema completo de orientación académica y profesional.</h2>
         </div>
         
         <div class="legend">
@@ -126,7 +159,24 @@
         </div>
     </div>
 
-    <!-- Panel para mover el rectángulo -->
+    <!-- Panel de Filtro -->
+    <div id="filter-panel">
+        <h3>🔍 Filtrar por Enseñanza</h3>
+        <select id="nodeFilter" onchange="filterGraph()">
+            <option value="all">📍 Ver Mapa Completo</option>
+            <option disabled>──────────</option>
+            <option value="1">🎓 ESO</option>
+            <option value="2">📚 Bachillerato (Ciencias/Hum)</option>
+            <option value="3">🛠️ FP Básica</option>
+            <option value="4">🔧 FP Grado Medio</option>
+            <option value="7">⚙️ FP Grado Superior</option>
+            <option value="5">🌙 ESA Adultos</option>
+            <option value="13">📖 Bachillerato Adultos</option>
+        </select>
+        <div class="config-toggle" onclick="toggleZoneConfig()">Editar zona punteada</div>
+    </div>
+
+    <!-- Panel para mover el rectángulo (Oculto por defecto) -->
     <div id="zone-config">
         <h3>Zona IES El Majuelo</h3>
         <div class="input-group">
@@ -165,14 +215,13 @@
             h: 600
         };
 
-        // --- DATOS DE NODOS ---
+        // --- DATOS ORIGINALES (MAESTROS) ---
         const nodesData = [
             // --- Nivel 0 ---
             { id: 1, label: 'E.S.O.\n(Educación Secundaria Obligatoria)', group: 'eso', x: 0, y: -300 },
 
             // --- Nivel 1 ---
             { id: 5, label: 'ESA\n(Adultos)', group: 'adultos', x: -400, y: -250 }, 
-            // CAMBIO: Grupo 'prueba'
             { id: 6, label: 'Prueba Libre\nESO', group: 'prueba', x: -400, y: -150 },
             { id: 3, label: 'F.P. Básica', group: 'fp', x: -100, y: -150 },
 
@@ -203,11 +252,13 @@
             { id: 13, label: 'Bachillerato\n(Adultos)', group: 'adultos', x: -400, y: -50 },
 
             // --- Nivel 2 ---
-            // CAMBIO: Grupo 'prueba'
-            { id: 10, label: 'Prueba Acceso\na Grado Medio', group: 'prueba', x: -400, y: 50 },
+            { id: 10, label: 'Prueba Acceso\na Grado Medio (+17)', group: 'prueba', x: -400, y: 50 },
             { id: 4, label: 'Grado Medio\n(Ciclo Formativo)', group: 'fp', x: -50, y: 50 },
 
-            // --- PAU (Nuevo Nodo Intermedio) ---
+            // --- NUEVO NODO: PRUEBA LIBRE BACHILLERATO ---
+            { id: 18, label: 'Prueba Libre\nBachillerato (+20)', group: 'prueba', x: -400, y: 125 },
+
+            // --- PAU (Nodo Intermedio) ---
             { 
                 id: 15, 
                 label: 'PAU / EBAU\n(Selectividad)', 
@@ -217,12 +268,10 @@
             },
 
             // --- Nivel 3 ---
-            // CAMBIO: Grupo 'prueba'
-            { id: 11, label: 'Prueba Acceso\na Grado Superior', group: 'prueba', x: -400, y: 200 },
+            { id: 11, label: 'Prueba Acceso\na Grado Superior (+19)', group: 'prueba', x: -400, y: 200 },
             { id: 7, label: 'Grado Superior\n(Ciclo Formativo)', group: 'fp', x: 50, y: 200 },
 
             // --- Nivel 4 (Salidas) ---
-            // CAMBIO: Grupo 'prueba'
             { id: 12, label: 'Acceso Universidad\nMayores 25', group: 'prueba', x: 250, y: 350 },
             { id: 9, label: 'MUNDO LABORAL\n(Empleo)', group: 'salida', x: -150, y: 350 },
             { id: 8, label: 'UNIVERSIDAD\n(Grado)', group: 'salida', x: 250, y: 450 },
@@ -235,6 +284,7 @@
             { from: 1, to: 3, label: 'No titula' },
             { from: 1, to: 5, label: '+18 años' },
             { from: 1, to: 6, label: '+18 años' },
+            { from: 1, to: 9, label: '+16 años', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral ESO
             
             // CONEXIONES A EXTERNOS DESDE ESO
             { from: 1, to: 14, label: 'Título ESO', dashes: true, color: { color: '#999'} },
@@ -242,16 +292,19 @@
 
             // FPB y Adultos ESO
             { from: 3, to: 4, label: 'Título' },
-            { from: 3, to: 16, label: 'Título', dashes: true, color: { color: '#999'} }, // FPB a GM Externo
+            { from: 3, to: 16, label: 'Título', dashes: true, color: { color: '#999'} },
+            { from: 3, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral FPB
 
             { from: 5, to: 2, label: 'Título ESO' }, 
             { from: 5, to: 13, label: 'Título ESO' }, 
             { from: 5, to: 4, label: 'Título ESO' },
             { from: 5, to: 16, label: 'Título ESO', dashes: true, color: { color: '#999'} },
+            { from: 5, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral ESA
 
             { from: 6, to: 2, label: 'Título obtenido' },
             { from: 6, to: 13, label: 'Título obtenido' },
             { from: 6, to: 4, label: 'Título obtenido' },
+            { from: 6, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral Prueba ESO
 
             // Pruebas Acceso y GM
             { from: 10, to: 4, label: 'Prueba +17' },
@@ -259,12 +312,12 @@
 
             // Desde GM Interno
             { from: 4, to: 7, label: 'Título Técnico' },
-            { from: 4, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} }, // A GS Externo
+            { from: 4, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} },
             { from: 4, to: 9, label: 'Inserción' },
 
             // Desde GM Externo
             { from: 16, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} },
-            { from: 16, to: 7, label: 'Título Técnico', dashes: true, color: { color: '#999'} }, // Movilidad a Majuelo
+            { from: 16, to: 7, label: 'Título Técnico', dashes: true, color: { color: '#999'} }, 
 
             // Bachillerato (Normal)
             { from: 2, to: 15, label: 'Título Bachiller' }, // A PAU
@@ -275,10 +328,16 @@
             // Bachillerato (Adultos)
             { from: 13, to: 15, label: 'Título Bachiller' }, // A PAU
             { from: 13, to: 7, label: 'Título' },
+            { from: 13, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral Bach Adultos
 
             // Bachillerato Artes (Externo)
-            { from: 14, to: 15, label: 'Título Bachiller', dashes: true, color: { color: '#999'} }, // A PAU
+            { from: 14, to: 15, label: 'Título', dashes: true, color: { color: '#999'} }, 
             { from: 14, to: 17, label: 'Título', dashes: true, color: { color: '#999'} },
+
+            // NUEVO: Prueba Libre Bachillerato
+            { from: 18, to: 15, label: 'Título' }, // A PAU
+            { from: 18, to: 7, label: 'Título' },  // A CFGS
+            { from: 18, to: 17, label: 'Título', dashes: true, color: { color: '#999'} }, // A CFGS Externo
 
             // PAU a Universidad
             { from: 15, to: 8, label: 'Nota Admisión' },
@@ -288,8 +347,11 @@
             { from: 11, to: 17, label: 'Prueba +19', dashes: true, color: { color: '#999'} },
 
             { from: 7, to: 8, label: 'Nota Media' }, // Acceso directo Univ desde GS
+            { from: 7, to: 15, label: 'Subir Nota', dashes: true }, // NUEVO: CFGS a PAU
             { from: 7, to: 9, label: 'Inserción' },
-            { from: 17, to: 8, label: 'Nota Media', dashes: true, color: { color: '#999'} }, // Desde GS Externo
+            
+            { from: 17, to: 8, label: 'Nota Media', dashes: true, color: { color: '#999'} }, 
+            { from: 17, to: 15, label: 'Subir Nota', dashes: true, color: { color: '#999'} }, // NUEVO: CFGS Ext a PAU
 
             // Uni lateral
             { from: 12, to: 8, label: 'Prueba Acceso' }
@@ -301,7 +363,6 @@
             bach: { color: { background: '#E8F5E9', border: '#4CAF50' }, font: { color: '#1b5e20' } },
             fp: { color: { background: '#FFF3E0', border: '#FF9800' }, font: { color: '#e65100' } },
             adultos: { color: { background: '#F3E5F5', border: '#9C27B0' }, font: { color: '#4a148c' } },
-            // CAMBIO: Definición del estilo visual para Pruebas
             prueba: { color: { background: '#F5F5F5', border: '#9E9E9E' }, font: { color: '#616161' } },
             salida: { color: { background: '#ECEFF1', border: '#607D8B' }, font: { color: '#37474f' } },
             pau: { color: { background: '#FFEBEE', border: '#EF5350' }, font: { color: '#B71C1C' } },
@@ -313,8 +374,10 @@
         };
 
         const container = document.getElementById('mynetwork');
-        const nodes = new vis.DataSet(nodesData);
-        const edges = new vis.DataSet(edgesData);
+        
+        // Creamos los datasets iniciales vacíos, los llenaremos con la función filterGraph
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
         const data = { nodes: nodes, edges: edges };
 
         const options = {
@@ -339,8 +402,13 @@
 
         const network = new vis.Network(container, data, options);
 
-        // --- DIBUJADO DEL RECTÁNGULO DE FONDO ---
+        // --- LÓGICA DE DIBUJADO DE ZONA ---
+        // (Solo se dibuja si estamos en modo "Ver Mapa Completo" para evitar ruido en filtros)
+        let isFullMap = true;
+
         network.on("beforeDrawing", function (ctx) {
+            if (!isFullMap) return; // No dibujar zona si hay filtro activo
+
             ctx.save();
             ctx.setLineDash([10, 10]);
             ctx.lineWidth = 2;
@@ -366,7 +434,56 @@
             ctx.restore();
         });
 
-        // --- FUNCIONALIDAD DEL PANEL ---
+        // --- FUNCIONES DE FILTRADO ---
+        function filterGraph() {
+            const select = document.getElementById('nodeFilter');
+            const selectedValue = select.value;
+
+            nodes.clear();
+            edges.clear();
+
+            if (selectedValue === 'all') {
+                // Restaurar todo
+                isFullMap = true;
+                nodes.add(nodesData);
+                edges.add(edgesData);
+                network.fit({ animation: { duration: 800 } });
+            } else {
+                // Filtrar
+                isFullMap = false;
+                const centerId = parseInt(selectedValue);
+                
+                // 1. Encontrar el nodo seleccionado
+                const centerNode = nodesData.find(n => n.id === centerId);
+                
+                // 2. Encontrar conexiones directas (Entrantes y Salientes)
+                // Queremos ver desde dónde vienes y a dónde vas
+                const connectedEdges = edgesData.filter(e => e.from === centerId || e.to === centerId);
+                
+                // 3. Recopilar IDs de nodos a mostrar
+                const nodeIdsToShow = new Set();
+                nodeIdsToShow.add(centerId); // El nodo central
+                
+                connectedEdges.forEach(e => {
+                    nodeIdsToShow.add(e.from);
+                    nodeIdsToShow.add(e.to);
+                });
+
+                // 4. Filtrar nodos
+                const filteredNodes = nodesData.filter(n => nodeIdsToShow.has(n.id));
+
+                // Añadir al grafo
+                nodes.add(filteredNodes);
+                edges.add(connectedEdges);
+                
+                // Ajustar vista suavemente
+                network.fit({ animation: { duration: 800 } });
+            }
+            // Forzar redibujado para que desaparezca/aparezca la zona
+            network.redraw();
+        }
+
+        // --- FUNCIONES DE INTERFAZ ---
         function updateZone() {
             zone.x = parseInt(document.getElementById('rectX').value);
             zone.y = parseInt(document.getElementById('rectY').value);
@@ -375,17 +492,33 @@
             network.redraw();
         }
 
-        network.once("afterDrawing", function() {
-            network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
-        });
+        function toggleZoneConfig() {
+            const panel = document.getElementById('zone-config');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+
+        // --- INICIO ---
+        // Cargar mapa completo al inicio
+        filterGraph(); 
 
         function fitGraph() {
             network.fit({ animation: { duration: 800 } });
         }
 
         function restorePositions() {
-            nodesData.forEach(nodeData => {
-                nodes.update({id: nodeData.id, x: nodeData.x, y: nodeData.y});
+            // Si estamos filtrados, restauramos posiciones solo de los visibles
+            // Si es todo, restauramos todo.
+            // La lógica es simple: updatear las coordenadas originales
+            const currentNodes = nodes.get();
+            currentNodes.forEach(n => {
+                const original = nodesData.find(od => od.id === n.id);
+                if (original) {
+                    nodes.update({id: n.id, x: original.x, y: original.y});
+                }
             });
             network.fit({ animation: { duration: 800 } });
         }
