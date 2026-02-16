@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Itinerarios Educativos - IES El Majuelo (Edad)</title>
+    <title>Itinerarios Educativos - IES El Majuelo (Completo)</title>
     
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
@@ -42,9 +42,8 @@
         h1 { margin: 0; font-size: 24px; color: #2c3e50; }
         h2 { margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d; font-weight: normal; }
         .version-tag { 
-            display: inline-block; background: #e3f2fd; color: #1565c0; 
+            display: inline-block; background: #e0f7fa; color: #006064; 
             padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px;
-            border: 1px solid #90caf9;
         }
 
         /* LEYENDA */
@@ -72,98 +71,44 @@
             z-index: 10;
             display: flex;
             gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
         }
 
         button {
             background: white; border: 1px solid #ccc; padding: 8px 15px;
             border-radius: 5px; cursor: pointer; font-weight: bold; color: #555;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s;
         }
         button:hover { background: #f5f5f5; color: #000; }
 
-        /* PANEL DE FILTRO (Derecha Arriba) */
-        #filter-panel {
+        /* ESTILO DEL SELECTOR */
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            color: #333;
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        /* PANEL DE CONFIGURACIÓN DE ZONA */
+        #zone-config {
             position: absolute;
             top: 90px;
             right: 20px;
-            width: 250px;
-            background: rgba(255, 255, 255, 0.98);
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            z-index: 15;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        #filter-panel h3 { margin: 0 0 10px 0; font-size: 14px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        
-        select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            background: #fff;
-            font-size: 14px;
-            color: #333;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-        select:focus { outline: none; border-color: #2196F3; }
-
-        /* Estilos para el filtro de edad */
-        .age-control {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            cursor: pointer;
-        }
-        .checkbox-wrapper input { margin-right: 8px; cursor: pointer; }
-        .checkbox-wrapper label { font-size: 13px; color: #333; cursor: pointer; font-weight: bold;}
-        
-        .slider-wrapper {
-            opacity: 0.5;
-            transition: opacity 0.3s;
-            pointer-events: none; /* Desactivado por defecto */
-        }
-        .slider-wrapper.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        input[type=range] {
-            width: 100%;
-            margin: 5px 0;
-        }
-        .age-display {
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-            color: #2196F3;
-            margin-bottom: 5px;
-        }
-
-        /* PANEL DE CONFIGURACIÓN DE ZONA (Debajo del filtro) */
-        #zone-config {
-            position: absolute;
-            top: 320px; /* Ajustado para estar debajo del filtro más alto */
-            right: 20px;
-            width: 250px;
+            width: 200px;
             background: rgba(255, 255, 255, 0.95);
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 14;
+            z-index: 15;
             font-size: 13px;
-            display: none; 
-        }
-        .config-toggle {
-            font-size: 11px; color: #999; text-align: right; cursor: pointer; margin-top: 5px; text-decoration: underline;
         }
         #zone-config h3 { margin: 0 0 10px 0; font-size: 14px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .input-group { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -174,7 +119,8 @@
             #header { flex-direction: column; align-items: flex-start; }
             .titles { max-width: 100%; margin-bottom: 10px; }
             .legend { width: 100%; }
-            #filter-panel { top: auto; bottom: 80px; right: 20px; width: 200px; }
+            #zone-config { top: auto; bottom: 80px; right: 20px; width: 180px; }
+            .controls { flex-direction: column; align-items: stretch; left: 10px; right: 10px; bottom: 10px; }
         }
     </style>
 </head>
@@ -182,8 +128,8 @@
 
     <div id="header">
         <div class="titles">
-            <h1>Itinerarios Educativos – IES El Majuelo <span class="version-tag">EDAD + FILTROS</span></h1>
-            <h2>Sistema completo de orientación. Usa el filtro de edad para ver opciones personalizadas.</h2>
+            <h1>Itinerarios Educativos – IES El Majuelo <span class="version-tag">FILTRABLE</span></h1>
+            <h2>Usa el selector inferior para ver solo un nivel y sus conexiones.</h2>
         </div>
         
         <div class="legend">
@@ -197,41 +143,7 @@
         </div>
     </div>
 
-    <!-- Panel de Filtro -->
-    <div id="filter-panel">
-        <h3>🔍 Filtrar por Enseñanza</h3>
-        <select id="nodeFilter" onchange="updateAllFilters()">
-            <option value="all">📍 Ver Mapa Completo</option>
-            <option disabled>──────────</option>
-            <option value="1">🎓 ESO</option>
-            <option value="2">📚 Bachillerato (Ciencias/Hum)</option>
-            <option value="3">🛠️ FP Básica</option>
-            <option value="4">🔧 FP Grado Medio</option>
-            <option value="7">⚙️ FP Grado Superior</option>
-            <option value="5">🌙 ESA Adultos</option>
-            <option value="13">📖 Bachillerato Adultos</option>
-        </select>
-
-        <div class="age-control">
-            <div class="checkbox-wrapper">
-                <input type="checkbox" id="ageFilterCheck" onchange="toggleAgeFilter()">
-                <label for="ageFilterCheck">Filtrar por Edad del Alumno</label>
-            </div>
-            <div id="ageSliderWrapper" class="slider-wrapper">
-                <div class="age-display"><span id="ageValue">16</span> años</div>
-                <input type="range" id="ageSlider" min="12" max="26" value="16" oninput="updateAgeDisplay(); updateAllFilters()">
-                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666;">
-                    <span>12</span>
-                    <span>19</span>
-                    <span>26+</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="config-toggle" onclick="toggleZoneConfig()">Editar zona punteada</div>
-    </div>
-
-    <!-- Panel para mover el rectángulo (Oculto por defecto) -->
+    <!-- Panel para mover el rectángulo -->
     <div id="zone-config">
         <h3>Zona IES El Majuelo</h3>
         <div class="input-group">
@@ -256,6 +168,12 @@
     <div id="mynetwork"></div>
 
     <div class="controls">
+        <!-- SELECTOR DE FILTRO -->
+        <select id="focusSelect" onchange="filterGraph()">
+            <option value="all">👁️ Ver Mapa Completo</option>
+            <!-- Las opciones se llenan automáticamente con JS -->
+        </select>
+        
         <button onclick="restorePositions()">Restaurar Nodos</button>
         <button onclick="fitGraph()">Centrar Mapa</button>
     </div>
@@ -270,17 +188,15 @@
             h: 600
         };
 
-        // --- DATOS ORIGINALES CON EDADES ---
-        // minAge: Edad mínima habitual de acceso
-        // maxAge: Edad máxima habitual (si no se define, es 99)
+        // --- DATOS DE NODOS ---
         const nodesData = [
             // --- Nivel 0 ---
-            { id: 1, label: 'E.S.O.\n(Educación Secundaria Obligatoria)', group: 'eso', x: 0, y: -300, minAge: 12, maxAge: 17 },
+            { id: 1, label: 'E.S.O.\n(Educación Secundaria Obligatoria)', group: 'eso', x: 0, y: -300 },
 
             // --- Nivel 1 ---
-            { id: 5, label: 'ESA\n(Adultos)', group: 'adultos', x: -400, y: -250, minAge: 18 }, 
-            { id: 6, label: 'Prueba Libre\nESO', group: 'prueba', x: -400, y: -150, minAge: 18 },
-            { id: 3, label: 'F.P. Básica', group: 'fp', x: -100, y: -150, minAge: 15, maxAge: 19 },
+            { id: 5, label: 'ESA\n(Adultos)', group: 'adultos', x: -400, y: -250 }, 
+            { id: 6, label: 'Prueba Libre\nESO', group: 'prueba', x: -400, y: -150 },
+            { id: 3, label: 'F.P. Básica', group: 'fp', x: -100, y: -150 },
 
             // --- BACHILLERATO (Interno) ---
             { 
@@ -288,62 +204,67 @@
                 label: 'Bachillerato\n(Ciencias y Humanidades)', 
                 group: 'bach', 
                 x: 200, 
-                y: -100,
-                minAge: 16, maxAge: 20
+                y: -100 
             },
 
             // --- EXTERNOS (Derecha) ---
             { 
                 id: 14, label: 'Bachillerato ARTES\n(En otro centro)', group: 'externo', 
-                x: 450, y: -100, shape: 'box', font: { color: '#666' }, minAge: 16, maxAge: 20
+                x: 450, y: -100, shape: 'box', font: { color: '#666' }
             },
             { 
                 id: 16, label: 'Grado Medio\n(Otros Centros)', group: 'externo', 
-                x: 450, y: 50, shape: 'box', font: { color: '#666' }, minAge: 16
+                x: 450, y: 50, shape: 'box', font: { color: '#666' }
             },
             { 
                 id: 17, label: 'Grado Superior\n(Otros Centros)', group: 'externo', 
-                x: 450, y: 200, shape: 'box', font: { color: '#666' }, minAge: 18
+                x: 450, y: 200, shape: 'box', font: { color: '#666' }
             },
 
             // Bachillerato Adultos (Interno)
-            { id: 13, label: 'Bachillerato\n(Adultos)', group: 'adultos', x: -400, y: -50, minAge: 18 },
+            { id: 13, label: 'Bachillerato\n(Adultos)', group: 'adultos', x: -400, y: -60 },
 
             // --- Nivel 2 ---
-            { id: 10, label: 'Prueba Acceso\na Grado Medio (+17)', group: 'prueba', x: -400, y: 50, minAge: 17 },
-            { id: 4, label: 'Grado Medio\n(Ciclo Formativo)', group: 'fp', x: -50, y: 50, minAge: 16 },
+            // NUEVO NODO: Curso Específico
+            { id: 18, label: 'Curso Específico\nAcceso GM', group: 'prueba', x: -400, y: 20 },
+            
+            { id: 10, label: 'Prueba Acceso\na Grado Medio', group: 'prueba', x: -400, y: 100 },
+            
+            { id: 4, label: 'Grado Medio\n(Ciclo Formativo)', group: 'fp', x: -50, y: 50 },
 
-            // --- NUEVO NODO: PRUEBA LIBRE BACHILLERATO ---
-            { id: 18, label: 'Prueba Libre\nBachillerato (+20)', group: 'prueba', x: -400, y: 125, minAge: 20 },
-
-            // --- PAU (Nodo Intermedio) ---
+            // --- PAU (Nuevo Nodo Intermedio) ---
             { 
                 id: 15, 
                 label: 'PAU / EBAU\n(Selectividad)', 
                 group: 'pau', 
                 x: 250, 
-                y: 200,
-                minAge: 17
+                y: 200 
             },
 
             // --- Nivel 3 ---
-            { id: 11, label: 'Prueba Acceso\na Grado Superior (+19)', group: 'prueba', x: -400, y: 200, minAge: 19 },
-            { id: 7, label: 'Grado Superior\n(Ciclo Formativo)', group: 'fp', x: 50, y: 200, minAge: 18 },
+            { id: 11, label: 'Prueba Acceso\na Grado Superior', group: 'prueba', x: -400, y: 200 },
+            { id: 7, label: 'Grado Superior\n(Ciclo Formativo)', group: 'fp', x: 50, y: 200 },
 
             // --- Nivel 4 (Salidas) ---
-            { id: 12, label: 'Acceso Universidad\nMayores 25', group: 'prueba', x: 250, y: 350, minAge: 25 },
-            { id: 9, label: 'MUNDO LABORAL\n(Empleo)', group: 'salida', x: -150, y: 350, minAge: 16 },
-            { id: 8, label: 'UNIVERSIDAD\n(Grado)', group: 'salida', x: 250, y: 450, minAge: 18 },
+            { id: 12, label: 'Acceso Universidad\nMayores 25', group: 'prueba', x: 250, y: 350 },
+            { id: 9, label: 'MUNDO LABORAL\n(Empleo)', group: 'salida', x: -150, y: 350 },
+            { id: 8, label: 'UNIVERSIDAD\n(Grado)', group: 'salida', x: 250, y: 450 },
         ];
 
         const edgesData = [
             // Desde ESO
             { from: 1, to: 2, label: 'Título ESO' },
             { from: 1, to: 4, label: 'Título ESO' },
-            { from: 1, to: 3, label: 'No titula' },
+            
+            { 
+                from: 1, 
+                to: 3, 
+                label: '15 años + 3º ESO\n+ Consejo Orientador',
+                title: 'Requisitos de Acceso a FP Básica:\n- Tener 15 años cumplidos (o en el año en curso).\n- Haber cursado 3º de ESO (excepcionalmente 2º).\n- Consejo Orientador favorable del equipo docente.'
+            },
+            
             { from: 1, to: 5, label: '+18 años' },
             { from: 1, to: 6, label: '+18 años' },
-            { from: 1, to: 9, label: '+16 años', dashes: true, color: {color:'#B0BEC5'} },
             
             // CONEXIONES A EXTERNOS DESDE ESO
             { from: 1, to: 14, label: 'Título ESO', dashes: true, color: { color: '#999'} },
@@ -351,27 +272,37 @@
 
             // FPB y Adultos ESO
             { from: 3, to: 4, label: 'Título' },
-            { from: 3, to: 16, label: 'Título', dashes: true, color: { color: '#999'} },
-            { from: 3, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} },
+            { from: 3, to: 16, label: 'Título', dashes: true, color: { color: '#999'} }, 
 
             { from: 5, to: 2, label: 'Título ESO' }, 
             { from: 5, to: 13, label: 'Título ESO' }, 
             { from: 5, to: 4, label: 'Título ESO' },
             { from: 5, to: 16, label: 'Título ESO', dashes: true, color: { color: '#999'} },
-            { from: 5, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} },
 
             { from: 6, to: 2, label: 'Título obtenido' },
             { from: 6, to: 13, label: 'Título obtenido' },
             { from: 6, to: 4, label: 'Título obtenido' },
-            { from: 6, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} },
 
-            // Pruebas Acceso y GM
-            { from: 10, to: 4, label: 'Prueba +17' },
-            { from: 10, to: 16, label: 'Prueba +17', dashes: true, color: { color: '#999'} },
+            // Pruebas Acceso y GM (Actualizado con d)
+            { 
+                from: 10, 
+                to: 4, 
+                label: 'Superar Prueba', 
+                title: 'd) Haber superado una prueba de acceso a ciclos formativos de grado medio.' 
+            },
+            { from: 10, to: 16, label: 'Superar Prueba', dashes: true, color: { color: '#999'} },
+
+            // Curso Específico Acceso GM (Nuevo con c)
+            {
+                from: 18,
+                to: 4,
+                label: 'Superar Curso',
+                title: 'c) Haber superado un curso de formación específico preparatorio para el acceso a ciclos formativos de grado medio en centros públicos o privados autorizados por la Administración educativa.'
+            },
 
             // Desde GM Interno
             { from: 4, to: 7, label: 'Título Técnico' },
-            { from: 4, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} },
+            { from: 4, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} }, 
             { from: 4, to: 9, label: 'Inserción' },
 
             // Desde GM Externo
@@ -379,24 +310,18 @@
             { from: 16, to: 7, label: 'Título Técnico', dashes: true, color: { color: '#999'} }, 
 
             // Bachillerato (Normal)
-            { from: 2, to: 15, label: 'Título Bachiller' },
+            { from: 2, to: 15, label: 'Título Bachiller' }, 
             { from: 2, to: 7, label: 'Título (Sin PAU)' },
             { from: 2, to: 17, label: 'Título (Sin PAU)', dashes: true, color: { color: '#999'} },
             { from: 2, to: 9, label: '', dashes: true, color: {color:'#ccc'} },
 
             // Bachillerato (Adultos)
-            { from: 13, to: 15, label: 'Título Bachiller' },
+            { from: 13, to: 15, label: 'Título Bachiller' }, 
             { from: 13, to: 7, label: 'Título' },
-            { from: 13, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} },
 
             // Bachillerato Artes (Externo)
-            { from: 14, to: 15, label: 'Título', dashes: true, color: { color: '#999'} }, 
+            { from: 14, to: 15, label: 'Título Bachiller', dashes: true, color: { color: '#999'} }, 
             { from: 14, to: 17, label: 'Título', dashes: true, color: { color: '#999'} },
-
-            // Prueba Libre Bachillerato
-            { from: 18, to: 15, label: 'Título' },
-            { from: 18, to: 7, label: 'Título' },
-            { from: 18, to: 17, label: 'Título', dashes: true, color: { color: '#999'} },
 
             // PAU a Universidad
             { from: 15, to: 8, label: 'Nota Admisión' },
@@ -405,12 +330,9 @@
             { from: 11, to: 7, label: 'Prueba +19' },
             { from: 11, to: 17, label: 'Prueba +19', dashes: true, color: { color: '#999'} },
 
-            { from: 7, to: 8, label: 'Nota Media' },
-            { from: 7, to: 15, label: 'Subir Nota', dashes: true },
+            { from: 7, to: 8, label: 'Nota Media' }, 
             { from: 7, to: 9, label: 'Inserción' },
-            
             { from: 17, to: 8, label: 'Nota Media', dashes: true, color: { color: '#999'} }, 
-            { from: 17, to: 15, label: 'Subir Nota', dashes: true, color: { color: '#999'} },
 
             // Uni lateral
             { from: 12, to: 8, label: 'Prueba Acceso' }
@@ -433,9 +355,8 @@
         };
 
         const container = document.getElementById('mynetwork');
-        
-        const nodes = new vis.DataSet();
-        const edges = new vis.DataSet();
+        const nodes = new vis.DataSet(nodesData);
+        const edges = new vis.DataSet(edgesData);
         const data = { nodes: nodes, edges: edges };
 
         const options = {
@@ -453,19 +374,15 @@
                 font: { size: 11, align: 'horizontal', background: 'rgba(255, 255, 255, 0.9)', strokeWidth: 0 },
                 smooth: { enabled: true, type: 'cubicBezier', roundness: 0.5 }
             },
-            physics: { enabled: false }, 
-            layout: { hierarchical: { enabled: false } }, 
+            physics: { enabled: false }, // Estático
+            layout: { hierarchical: { enabled: false } }, // Posición manual
             interaction: { dragNodes: true, zoomView: true, dragView: true, hover: true }
         };
 
         const network = new vis.Network(container, data, options);
 
-        // --- LÓGICA DE DIBUJADO DE ZONA ---
-        let isFullMap = true;
-
+        // --- DIBUJADO DEL RECTÁNGULO DE FONDO ---
         network.on("beforeDrawing", function (ctx) {
-            if (!isFullMap) return; 
-
             ctx.save();
             ctx.setLineDash([10, 10]);
             ctx.lineWidth = 2;
@@ -491,98 +408,7 @@
             ctx.restore();
         });
 
-        // --- GESTIÓN DE FILTROS ---
-
-        function toggleAgeFilter() {
-            const checkBox = document.getElementById('ageFilterCheck');
-            const sliderWrapper = document.getElementById('ageSliderWrapper');
-            
-            if (checkBox.checked) {
-                sliderWrapper.classList.add('active');
-            } else {
-                sliderWrapper.classList.remove('active');
-            }
-            updateAllFilters();
-        }
-
-        function updateAgeDisplay() {
-            const age = document.getElementById('ageSlider').value;
-            document.getElementById('ageValue').innerText = age;
-        }
-
-        // Función Maestra de Filtros: Combina Dropdown + Edad
-        function updateAllFilters() {
-            const teachSelect = document.getElementById('nodeFilter');
-            const ageCheck = document.getElementById('ageFilterCheck');
-            const ageSlider = document.getElementById('ageSlider');
-            
-            const teachValue = teachSelect.value;
-            const useAge = ageCheck.checked;
-            const currentAge = parseInt(ageSlider.value);
-
-            nodes.clear();
-            edges.clear();
-
-            // 1. Determinamos qué nodos pasan el filtro de ENSEÑANZA
-            let nodesToShowByTeaching = new Set();
-            
-            if (teachValue === 'all') {
-                isFullMap = true;
-                // Todos los nodos son candidatos
-                nodesData.forEach(n => nodesToShowByTeaching.add(n.id));
-            } else {
-                isFullMap = false;
-                const centerId = parseInt(teachValue);
-                nodesToShowByTeaching.add(centerId);
-                
-                // Añadir vecinos directos
-                edgesData.forEach(e => {
-                    if (e.from === centerId || e.to === centerId) {
-                        nodesToShowByTeaching.add(e.from);
-                        nodesToShowByTeaching.add(e.to);
-                    }
-                });
-            }
-
-            // 2. Determinamos qué nodos pasan el filtro de EDAD (si está activo)
-            let finalNodes = [];
-            
-            if (useAge) {
-                // Si usamos edad, filtramos los que ya pasaron el filtro de enseñanza
-                isFullMap = false; // Ocultamos la zona azul si filtramos por edad para evitar confusión
-                
-                finalNodes = nodesData.filter(n => {
-                    // Debe estar en la lista de enseñanza permitida
-                    if (!nodesToShowByTeaching.has(n.id)) return false;
-
-                    // Lógica de Edad
-                    const min = n.minAge || 0;
-                    const max = n.maxAge || 99;
-                    return currentAge >= min && currentAge <= max;
-                });
-            } else {
-                // Si no usamos edad, mostramos todos los que pasaron el filtro de enseñanza
-                finalNodes = nodesData.filter(n => nodesToShowByTeaching.has(n.id));
-                // Si el filtro de enseñanza es 'all' y no hay edad, restauramos isFullMap a true arriba
-            }
-
-            // 3. Filtramos las conexiones
-            // Solo mostramos flechas si ambos nodos (origen y destino) están visibles
-            const visibleNodeIds = new Set(finalNodes.map(n => n.id));
-            const finalEdges = edgesData.filter(e => visibleNodeIds.has(e.from) && visibleNodeIds.has(e.to));
-
-            // Actualizamos el grafo
-            nodes.add(finalNodes);
-            edges.add(finalEdges);
-            
-            // Si el cambio fue drástico, ajustamos cámara
-            // network.fit({ animation: { duration: 800 } }); 
-            // Comentado para evitar saltos constantes al mover el slider, 
-            // pero útil si cambiamos de enseñanza. Lo haremos condicional:
-            
-        }
-
-        // --- FUNCIONES DE INTERFAZ ---
+        // --- FUNCIONALIDAD DEL PANEL ---
         function updateZone() {
             zone.x = parseInt(document.getElementById('rectX').value);
             zone.y = parseInt(document.getElementById('rectY').value);
@@ -591,27 +417,74 @@
             network.redraw();
         }
 
-        function toggleZoneConfig() {
-            const panel = document.getElementById('zone-config');
-            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        // --- FUNCIONALIDAD DE FILTRADO (NUEVO) ---
+        function populateSelector() {
+            const selector = document.getElementById('focusSelect');
+            // Ordenar nodos alfabéticamente para facilitar la búsqueda
+            const sortedNodes = nodes.get().sort((a, b) => a.label.localeCompare(b.label));
+            
+            sortedNodes.forEach(node => {
+                const option = document.createElement('option');
+                option.value = node.id;
+                // Limpiar saltos de línea para el texto del selector
+                option.text = node.label.replace(/\n/g, " "); 
+                selector.appendChild(option);
+            });
         }
 
-        // --- INICIO ---
-        updateAllFilters(); 
+        function filterGraph() {
+            const selectedValue = document.getElementById('focusSelect').value;
+
+            if (selectedValue === 'all') {
+                // Mostrar todos
+                nodes.forEach(n => nodes.update({id: n.id, hidden: false}));
+                edges.forEach(e => edges.update({id: e.id, hidden: false}));
+            } else {
+                const nodeId = parseInt(selectedValue);
+                
+                // Obtener conectados
+                const connectedNodes = network.getConnectedNodes(nodeId);
+                const connectedEdges = network.getConnectedEdges(nodeId);
+
+                // Recorrer todos los nodos para ocultar/mostrar
+                const allNodes = nodes.getIds();
+                const nodeUpdates = allNodes.map(id => {
+                    // Es visible si es el nodo seleccionado O es uno de sus conectados
+                    const isVisible = (id === nodeId) || connectedNodes.includes(id);
+                    return { id: id, hidden: !isVisible };
+                });
+                nodes.update(nodeUpdates);
+
+                // Recorrer todas las aristas para ocultar/mostrar
+                const allEdges = edges.getIds();
+                const edgeUpdates = allEdges.map(id => {
+                    // Es visible si está en la lista de conectados
+                    const isVisible = connectedEdges.includes(id);
+                    return { id: id, hidden: !isVisible };
+                });
+                edges.update(edgeUpdates);
+            }
+        }
+
+        // Inicializar el selector cuando cargue
+        populateSelector();
+
+        network.once("afterDrawing", function() {
+            network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
+        });
 
         function fitGraph() {
             network.fit({ animation: { duration: 800 } });
         }
 
         function restorePositions() {
-            const currentNodes = nodes.get();
-            currentNodes.forEach(n => {
-                const original = nodesData.find(od => od.id === n.id);
-                if (original) {
-                    nodes.update({id: n.id, x: original.x, y: original.y});
-                }
+            nodesData.forEach(nodeData => {
+                nodes.update({id: nodeData.id, x: nodeData.x, y: nodeData.y});
             });
             network.fit({ animation: { duration: 800 } });
+            // Resetear filtro al restaurar
+            document.getElementById('focusSelect').value = 'all';
+            filterGraph();
         }
 
     </script>
