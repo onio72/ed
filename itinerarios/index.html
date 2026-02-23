@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -294,11 +295,12 @@
             { id: 7, label: 'Grado Superior\n(Ciclo Formativo)\n+Info', group: 'fp', x: 50, y: 200 },
 
             // --- Cursos de Especialización ---
-            { id: 20, label: 'Curso Esp.\n(GM)\nCertificación aprovechamiento', group: 'fp', x: -50, y: 320 },
+            { id: 20, label: 'Curso Esp.\n(GM)', group: 'fp', x: -50, y: 320 },
             { id: 21, label: 'Curso Esp.\n(GS)\nCertificación aprovechamiento', group: 'fp', x: 150, y: 320 },
-            { id: 22, label: 'Prueba Capacidad\n(+18)', group: 'prueba', x: -520, y: 300 },
+            { id: 22, label: 'Prueba Capacidad\n(+18, sin título GM)', group: 'prueba', x: -520, y: 300 },
             { id: 23, label: 'Técnico Especialista\n(Curso Esp. GM)', group: 'fp', x: -50, y: 430 },
             { id: 24, label: 'Máster FP\n(Curso Esp. GS)', group: 'fp', x: 150, y: 430 },
+            { id: 25, label: 'Certificación\n(aprovechamiento)', group: 'prueba', x: -200, y: 430 },
 
             // --- Nivel 4 (Salidas) ---
             { id: 12, label: 'Pruebas Acceso Univ\nMayores 25/40/45', group: 'prueba', x: -520, y: 360 },
@@ -348,9 +350,11 @@
             { from: 4, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} },
             { from: 4, to: 9, label: 'Inserción' },
             { from: 4, to: 20, label: 'Acceso' },
-            { from: 20, to: 9, label: 'Inserción' },
             { from: 22, to: 20, label: 'Superar prueba\n(prelación por nota)' },
-            { from: 20, to: 23, label: 'Si título GM' },
+            { from: 20, to: 23, label: 'Si acceso desde GM' },
+            { from: 20, to: 25, label: 'Si acceso por prueba' },
+            { from: 23, to: 9, label: 'Inserción' },
+            { from: 25, to: 9, label: 'Inserción' },
 
             // Desde GM Externo
             { from: 16, to: 17, label: 'Título Técnico', dashes: true, color: { color: '#999'} },
