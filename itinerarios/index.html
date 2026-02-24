@@ -140,6 +140,20 @@
             cursor: pointer;
         }
 
+        /* TOOLTIP COORDENADAS */
+        #coord-tooltip {
+            position: absolute;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            font-size: 11px;
+            border-radius: 6px;
+            pointer-events: none;
+            display: none;
+            z-index: 30;
+            white-space: nowrap;
+        }
+
         /* PANEL DE CONFIGURACIÓN DE ZONA */
         #zone-config {
             position: absolute;
@@ -181,8 +195,9 @@
             <div class="legend-item"><div class="dot bach"></div> Bachillerato</div>
             <div class="legend-item"><div class="dot fp"></div> FP</div>
             <div class="legend-item"><div class="dot adultos"></div> Adultos</div>
-            <div class="legend-item"><div class="dot prueba"></div> Pruebas</div>
+            <div class="legend-item"><div class="dot prueba"></div> Pruebas / Accesos</div>
             <div class="legend-item"><div class="dot pau"></div> PAU</div>
+            <div class="legend-item"><div class="dot salida"></div> Salidas</div>
             <div class="legend-item"><div class="dot externo"></div> Otro Centro</div>
         </div>
     </div>
@@ -226,6 +241,7 @@
         <h4 id="info-title"></h4>
         <div id="info-body"></div>
     </div>
+    <div id="coord-tooltip"></div>
 
     <script type="text/javascript">
         
@@ -240,30 +256,30 @@
         // --- DATOS DE NODOS ---
         const nodesData = [
             // --- Nivel 0 ---
-            { id: 1, label: 'E.S.O.\n(Educación Secundaria Obligatoria)', group: 'eso', x: 0, y: -300 },
+            { id: 1, label: 'E.S.O.\n(Educación Secundaria Obligatoria)', group: 'eso', x: 40, y: -300 },
 
             // --- Nivel 1 ---
-            { id: 5, label: 'ESA\n(Adultos)', group: 'adultos', x: -400, y: -250 }, 
-            { id: 6, label: 'Prueba Libre\nESO', group: 'prueba', x: -520, y: -120 },
-            { id: 3, label: 'F.P. Básica', group: 'fp', x: -100, y: -150 },
+            { id: 5, label: 'ESA\n(Adultos)', group: 'adultos', x: -260, y: -40 }, 
+            { id: 6, label: 'Prueba Libre\nESO', group: 'prueba', x: -620, y: -120 },
+            { id: 3, label: 'F.P. Básica', group: 'fp', x: -260, y: -140 },
 
             // --- BACHILLERATO (Interno) ---
             { 
                 id: 2, 
                 label: 'Bachillerato\n(Ciencias y Humanidades)', 
                 group: 'bach', 
-                x: 200, 
-                y: -100 
+                x: 220, 
+                y: -140 
             },
 
             // --- EXTERNOS (Derecha) ---
             { 
                 id: 14, label: 'Bachillerato ARTES\n(En otro centro)', group: 'externo', 
-                x: 450, y: -100, shape: 'box', font: { color: '#666' }
+                x: 560, y: -120, shape: 'box', font: { color: '#666' }
             },
             { 
                 id: 16, label: 'Grado Medio\n(Otros Centros)', group: 'externo', 
-                x: 450, y: 50, shape: 'box', font: { color: '#666' }
+                x: 560, y: 60, shape: 'box', font: { color: '#666' }
             },
             { 
                 id: 17, label: 'Grado Superior\n(Otros Centros)', group: 'externo', 
@@ -274,9 +290,9 @@
             { id: 13, label: 'Bachillerato\n(Adultos)\n+Info', group: 'adultos', x: -400, y: -50 },
 
             // --- Nivel 2 ---
-            { id: 19, label: 'Curso Específico\nAcceso GM (+17)', group: 'prueba', x: -520, y: 20 },
-            { id: 10, label: 'Prueba Acceso\na Grado Medio (+17)', group: 'prueba', x: -520, y: 80 },
-            { id: 4, label: 'Grado Medio\n(Ciclo Formativo)\n+Info', group: 'fp', x: -50, y: 50 },
+            { id: 19, label: 'Curso acceso GM\n(+17)', group: 'prueba', x: -520, y: 20 },
+            { id: 10, label: 'Prueba acceso GM\n(+17)', group: 'prueba', x: -520, y: 80 },
+            { id: 4, label: 'Grado Medio\n(Ciclo Formativo)\n+Info', group: 'fp', x: 200, y: 40 },
 
             // --- NUEVO NODO: PRUEBA LIBRE BACHILLERATO ---
             { id: 18, label: 'Prueba Libre\nBachillerato (+20)\n+Info', group: 'prueba', x: -520, y: 140 },
@@ -291,20 +307,22 @@
             },
 
             // --- Nivel 3 ---
-            { id: 11, label: 'Prueba Acceso\na Grado Superior (+19)', group: 'prueba', x: -520, y: 220 },
+            { id: 26, label: 'Curso acceso GS\n(+19)', group: 'prueba', x: -520, y: 180 },
+            { id: 11, label: 'Prueba acceso GS\n(+19)', group: 'prueba', x: -520, y: 240 },
             { id: 7, label: 'Grado Superior\n(Ciclo Formativo)\n+Info', group: 'fp', x: 50, y: 200 },
 
             // --- Cursos de Especialización ---
-            { id: 20, label: 'Curso Esp.\n(GM)', group: 'fp', x: -50, y: 320 },
-            { id: 21, label: 'Curso Esp.\n(GS)\nCertificación aprovechamiento', group: 'fp', x: 150, y: 320 },
+            { id: 20, label: 'Curso Especializ.\nGM', group: 'fp', x: -50, y: 320 },
+            { id: 21, label: 'Curso Especializ.\nGS', group: 'fp', x: 150, y: 320 },
             { id: 22, label: 'Prueba Capacidad\n(+18, sin título GM)', group: 'prueba', x: -520, y: 300 },
-            { id: 23, label: 'Técnico Especialista\n(Curso Esp. GM)', group: 'fp', x: -50, y: 430 },
-            { id: 24, label: 'Máster FP\n(Curso Esp. GS)', group: 'fp', x: 150, y: 430 },
-            { id: 25, label: 'Certificación\n(aprovechamiento)', group: 'prueba', x: -200, y: 430 },
+            { id: 23, label: 'Técnico Especialista', group: 'fp', x: -50, y: 430 },
+            { id: 24, label: 'Máster FP', group: 'fp', x: 150, y: 430 },
+            { id: 25, label: 'Certificación\n(aprovechamiento GM)', group: 'prueba', x: -200, y: 430 },
+            { id: 27, label: 'Certificación\n(aprovechamiento)', group: 'prueba', x: 260, y: 430 },
 
             // --- Nivel 4 (Salidas) ---
             { id: 12, label: 'Pruebas Acceso Univ\nMayores 25/40/45', group: 'prueba', x: -520, y: 360 },
-            { id: 9, label: 'MUNDO LABORAL\n(Empleo)', group: 'salida', x: -200, y: 420 },
+            { id: 9, label: 'MUNDO LABORAL\n(Empleo)', group: 'salida', x: 0, y: 520 },
             { id: 8, label: 'UNIVERSIDAD\n(Grado)', group: 'salida', x: 200, y: 520 },
         ];
 
@@ -342,6 +360,8 @@
             { from: 19, to: 4, label: 'Curso +17' },
             { from: 10, to: 4, label: 'Prueba +17' },
             { from: 10, to: 16, label: 'Prueba +17', dashes: true, color: { color: '#999'} },
+            { from: 26, to: 7, label: 'Curso +19' },
+            { from: 26, to: 17, label: 'Curso +19', dashes: true, color: { color: '#999'} },
 
             // Desde GM Interno
             { from: 4, to: 2, label: 'Título Técnico' }, // Acceso a Bachillerato
@@ -362,14 +382,15 @@
 
             // Bachillerato (Normal)
             { from: 2, to: 15, label: 'Título' }, // A PAU
-            { from: 2, to: 7, label: 'Título (Sin PAU)' },
-            { from: 2, to: 17, label: 'Título (Sin PAU)', dashes: true, color: { color: '#999'} },
+            { from: 2, to: 7, label: 'Título' },
+            { from: 2, to: 17, label: 'Título', dashes: true, color: { color: '#999'} },
             { from: 2, to: 13, label: 'Sin título' },
             { from: 2, to: 9, label: '', dashes: true, color: {color:'#ccc'} },
 
             // Bachillerato (Adultos)
             { from: 13, to: 15, label: 'Título' }, // A PAU
             { from: 13, to: 7, label: 'Título' },
+            { from: 13, to: 17, label: 'Título', dashes: true, color: { color: '#999'} },
             { from: 13, to: 9, label: '', dashes: true, color: {color:'#B0BEC5'} }, // Salida Laboral Bach Adultos
 
             // Bachillerato Artes (Externo)
@@ -392,9 +413,11 @@
             { from: 7, to: 15, label: 'Subir Nota', dashes: true }, // NUEVO: CFGS a PAU
             { from: 7, to: 9, label: 'Inserción' },
             { from: 7, to: 21, label: 'Acceso' },
-            { from: 21, to: 9, label: 'Inserción' },
             { from: 22, to: 21, label: 'Superar prueba\n(prelación por nota)' },
             { from: 21, to: 24, label: 'Si título GS' },
+            { from: 21, to: 27, label: 'Si acceso por prueba' },
+            { from: 24, to: 9, label: 'Inserción' },
+            { from: 27, to: 9, label: 'Inserción' },
             
             { from: 17, to: 8, label: 'Nota Media', dashes: true, color: { color: '#999'} }, 
             { from: 17, to: 15, label: 'Subir Nota', dashes: true, color: { color: '#999'} }, // NUEVO: CFGS Ext a PAU
@@ -445,6 +468,8 @@
         };
 
         const network = new vis.Network(container, data, options);
+        const coordTooltip = document.getElementById('coord-tooltip');
+        let hoveredNodeId = null;
 
         // --- INFO POR NODO ---
         const infoByNodeId = {
@@ -597,6 +622,8 @@
         }
 
         populateSelector();
+        document.getElementById('focusSelect').value = '1';
+        filterGraph();
 
         network.on("click", function(params) {
             if (params.nodes && params.nodes.length > 0) {
@@ -614,6 +641,28 @@
                 infoBtn.disabled = true;
                 hideInfo();
             }
+        });
+
+        network.on("hoverNode", function(params) {
+            hoveredNodeId = params.node;
+        });
+
+        network.on("blurNode", function() {
+            hoveredNodeId = null;
+            coordTooltip.style.display = "none";
+        });
+
+        network.on("mouseMove", function(params) {
+            if (!hoveredNodeId) return;
+            const pos = network.getPositions([hoveredNodeId])[hoveredNodeId];
+            if (!pos) return;
+            const dom = (params.event && params.event.pointer && params.event.pointer.DOM) ? params.event.pointer.DOM : null;
+            if (!dom) return;
+            const rect = container.getBoundingClientRect();
+            coordTooltip.textContent = `x: ${Math.round(pos.x)}  y: ${Math.round(pos.y)}`;
+            coordTooltip.style.left = (rect.left + dom.x + 12) + "px";
+            coordTooltip.style.top = (rect.top + dom.y + 12) + "px";
+            coordTooltip.style.display = "block";
         });
 
         network.once("afterDrawing", function() {
