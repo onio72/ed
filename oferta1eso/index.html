@@ -16,7 +16,7 @@
             --bar-bg: #ffffff;
             --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            --icon-size: 18px;
+            --icon-size: 20px;
         }
 
         body, html {
@@ -62,7 +62,7 @@
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 800;
             margin: 0;
             color: var(--accent-color);
@@ -76,7 +76,7 @@
         }
 
         label {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05rem;
@@ -88,7 +88,7 @@
             border-radius: 8px;
             border: 1.5px solid var(--border-color);
             background-color: #fff;
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: #1e293b;
             outline: none;
             cursor: pointer;
@@ -132,7 +132,7 @@
 
         .subject-label {
             width: 280px;
-            font-size: 0.95rem;
+            font-size: 1.02rem;
             text-align: right;
             font-weight: 500;
             color: #475569;
@@ -183,7 +183,7 @@
 
         .hours-tag {
             margin-left: auto;
-            font-size: 0.9rem;
+            font-size: 0.98rem;
             color: #64748b;
             font-weight: 700;
             white-space: nowrap;
@@ -263,9 +263,9 @@
         const baseSubjects = [
             { id: 'mates', name: 'Matemáticas', icon: 'calculator', hours: 4, bilinguable: false },
             { id: 'lengua', name: 'Lengua Castellana y Literatura', icon: 'book-open', hours: 4, bilinguable: false },
-            { id: 'geohist', name: 'Geografía e Historia', icon: 'globe', hours: 3, bilinguable: true },
+            { id: 'geohist', name: 'Geografía e Historia', icon: 'globe', hours: 3, bilinguable: false },
             { id: 'biogeo', name: 'Biología y Geología', icon: 'microscope', hours: 3, bilinguable: true },
-            { id: 'edfisica', name: 'Educación Física', icon: 'dumbbell', hours: 2, bilinguable: true },
+            { id: 'edfisica', name: 'Educación Física', icon: 'dumbbell', hours: 3, bilinguable: true },
             { id: 'musica', name: 'Música', icon: 'music', hours: 2, bilinguable: false },
             { id: 'plastica', name: 'Educación Plástica y Visual', icon: 'palette', hours: 1, bilinguable: false }
         ];
@@ -285,6 +285,15 @@
 
         function render() {
             const isBilingue = selectBilingue.value === 'si';
+            
+            // En modalidad bilingüe, el primer idioma extranjero debe ser Inglés
+            if (isBilingue) {
+                selectIdioma1.value = 'ingles';
+                selectIdioma1.disabled = true;
+            } else {
+                selectIdioma1.disabled = false;
+            }
+
             const lang1 = selectIdioma1.value;
             const lang2 = (lang1 === 'ingles') ? 'frances' : 'ingles';
             const optionRel = selectReligion.value;
@@ -314,9 +323,8 @@
                 langType: lang2
             });
 
-            // Optativas
-            list.push({ id: 'opt1', name: 'Optativa I', icon: 'puzzle', hours: 2, bilinguable: false });
-            list.push({ id: 'opt2', name: 'Optativa II', icon: 'puzzle', hours: 2, bilinguable: false });
+            // Optativa (solo una elección)
+            list.push({ id: 'optativa', name: 'Optativa', icon: 'puzzle', hours: 2, bilinguable: false });
 
             // Valores / Religión
             list.push({
