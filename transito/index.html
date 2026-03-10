@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -215,6 +214,10 @@
       text-align: left;
       font-size: 13px;
     }
+    table th:not(:first-child),
+    table td:not(:first-child) {
+      text-align: center;
+    }
     th {
       background: #f4f1ec;
       color: #2d2a26;
@@ -267,6 +270,47 @@
       gap: 16px;
       margin-top: 18px;
     }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .pie-rows {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .pie-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .pie-row > div {
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+    }
+    .pie-canvas-wrap {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+    }
+    .pie-row > div h4 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      text-align: center;
+    }
+    .mini-grid canvas {
+      height: 220px !important;
+    }
+    .pie-row > div canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
     .chart-stack {
       display: grid;
       grid-template-columns: 1fr;
@@ -289,11 +333,21 @@
       font-size: 12px;
       color: var(--muted);
     }
+    .prev-lite {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .prev-legend {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
 
     @media (max-width: 900px) {
       header { grid-template-columns: 1fr; }
       .dist-panel { grid-template-columns: 1fr; }
       .detail-panel { grid-template-columns: 1fr; }
+      .pie-row { grid-template-columns: 1fr; }
       canvas { height: 280px !important; }
     }
   </style>
@@ -307,7 +361,7 @@
   <div class="app">
     <header id="mainHeader">
       <div class="brand">
-        <img src="maju22.bmp" alt="IES El Majuelo" />
+        <img src="maju22.jpg" alt="IES El Majuelo" />
         <div>
           <h1 class="title">Tránsito 2025-26. IES El Majuelo</h1>
         </div>
@@ -323,6 +377,9 @@
     </div>
 
     <section class="tab-panel active" id="tab-results">
+      <div class="footer-actions" style="margin-top:0;margin-bottom:10px;">
+        <button class="btn btn-secondary" data-export="results">Exportar PDF (Resultados)</button>
+      </div>
       <section class="table-wrap">
         <table>
           <thead>
@@ -379,18 +436,18 @@
       </section>
         <div class="card">
           <h3>Suspensos por centro (datos absolutos)</h3>
+          <p class="prev-legend">Negro: 25/26 · Gris: 24/25</p>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Centro</th>
-                  <th>Curso</th>
                   <th>0</th>
                   <th>1-2</th>
                   <th>3-5</th>
                   <th>&gt;5</th>
-                  <th>Media suspensos</th>
-                  <th>Total alumnos</th>
+                  <th>Media</th>
+                  <th>Total</th>
                 </tr>
               </thead>
               <tbody id="failAbsBody"></tbody>
@@ -399,12 +456,12 @@
         </div>
         <div class="card">
           <h3>Suspensos por centro (% sobre total)</h3>
+          <p class="prev-legend">Negro: 25/26 · Gris: 24/25</p>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Centro</th>
-                  <th>Curso</th>
                   <th>0</th>
                   <th>1-2</th>
                   <th>3-5</th>
@@ -412,6 +469,21 @@
                 </tr>
               </thead>
               <tbody id="failPctBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Repetidores por centro</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Centro</th>
+                  <th>Repetidores 24/25</th>
+                  <th>Repetidores 25/26</th>
+                </tr>
+              </thead>
+              <tbody id="repeatersBody"></tbody>
             </table>
           </div>
         </div>
@@ -423,32 +495,54 @@
           <h3>Suspensos por centro (% sobre total) — total</h3>
           <canvas id="failPctTotalChart"></canvas>
         </div>
-        <div class="card">
-          <p style="margin:0;font-size:12px;color:#6b7280;">Nota: en los totales se contabilizan repetidores; en los datos desagregados por colegio no.</p>
+        <div class="card chart-card">
+          <h3>Distribución de suspensos (curso actual)</h3>
+          <div class="pie-rows">
+            <div class="mini-grid pie-row">
+              <div>
+                <h4>% alumnado con n suspensos (curso actual)</h4>
+                <div class="pie-canvas-wrap">
+                  <canvas id="failPieAll"></canvas>
+                </div>
+              </div>
+              <div>
+                <h4>% alumnado con n suspensos (curso anterior)</h4>
+                <div class="pie-canvas-wrap">
+                  <canvas id="failPieAllPrev"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="mini-grid pie-row">
+              <div>
+                <h4>% alumnado bilingüe con n suspensos</h4>
+                <div class="pie-canvas-wrap">
+                  <canvas id="failPieBilingual"></canvas>
+                </div>
+              </div>
+              <div>
+                <h4>% alumnado no bilingüe con n suspensos</h4>
+                <div class="pie-canvas-wrap">
+                  <canvas id="failPieNonBilingual"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="card chart-card">
           <h3>Suspensos por centro (absolutos) — conjunto</h3>
           <canvas id="failAbsChart"></canvas>
         </div>
         <div class="card">
-          <label for="failAbsSelect" style="font-size:12px;color:#6b7280;">Centro (Top 4)</label>
-          <select id="failAbsSelect" style="margin-top:6px;"></select>
-        </div>
-        <div class="card chart-card">
           <h3>Suspensos por centro (absolutos) — detalle</h3>
-          <canvas id="failAbsSingleChart"></canvas>
+          <div class="detail-panel" id="failAbsDetailGrid"></div>
         </div>
         <div class="card chart-card">
           <h3>Suspensos por centro (% sobre total) — conjunto</h3>
           <canvas id="failPctChart"></canvas>
         </div>
         <div class="card">
-          <label for="failPctSelect" style="font-size:12px;color:#6b7280;">Centro (Top 4)</label>
-          <select id="failPctSelect" style="margin-top:6px;"></select>
-        </div>
-        <div class="card chart-card">
           <h3>Suspensos por centro (% sobre total) — detalle</h3>
-          <canvas id="failPctSingleChart"></canvas>
+          <div class="detail-panel" id="failPctDetailGrid"></div>
         </div>
       </section>
     </section>
@@ -475,7 +569,6 @@
           <div class="file-input">
             <button class="btn" id="btnProcess">Procesar datos</button>
             <button class="btn btn-secondary" id="btnExportCSV">Exportar CSV</button>
-            <button class="btn btn-secondary" id="btnReport">Generar informe para claustro</button>
             <div class="status" id="status">Esperando archivos.</div>
           </div>
         </div>
@@ -505,6 +598,9 @@
       subjects: [],
       merged: [],
       top4: [],
+      schoolLabels: new Map(),
+      schoolKeyByLabel: new Map(),
+      repeaters: { prev: new Map(), curr: new Map() },
       failBins: { prev: new Map(), curr: new Map(), totalPrev: null, totalCurr: null },
       charts: {
         distBarCurr: null,
@@ -516,7 +612,11 @@
         failAbsSingle: null,
         failPctSingle: null,
         failAbsTotal: null,
-        failPctTotal: null
+        failPctTotal: null,
+        failPieAll: null,
+        failPieAllPrev: null,
+        failPieBilingual: null,
+        failPieNonBilingual: null
       }
     };
 
@@ -527,12 +627,76 @@
     Chart.defaults.plugins.legend.labels.padding = 12;
     const tabsContainer = $("tabsContainer");
 
+    const doughnutPercentLabels = {
+      id: "doughnutPercentLabels",
+      afterDatasetsDraw(chart, args, opts) {
+        if (chart.config.type !== "doughnut" && chart.config.type !== "pie") return;
+        const { ctx } = chart;
+        const fontSize = opts?.fontSize || 14;
+        const minPctToDraw = opts?.minPctToDraw || 0;
+        const color = opts?.color || "#1f2937";
+        chart.data.datasets.forEach((dataset, di) => {
+          const meta = chart.getDatasetMeta(di);
+          if (!meta || meta.hidden) return;
+          const total = dataset.data.reduce((a, b) => a + b, 0);
+          meta.data.forEach((arc, i) => {
+            const value = dataset.data[i];
+            if (!value || total === 0) return;
+            const pct = (value / total) * 100;
+            if (pct < minPctToDraw) return;
+            const props = arc.getProps(["x", "y", "startAngle", "endAngle", "innerRadius", "outerRadius"], true);
+            const angle = (props.startAngle + props.endAngle) / 2;
+            const radiusRatio = Math.max(0, Math.min(1, opts?.radiusRatio || 0.72));
+            const radius = props.innerRadius + (props.outerRadius - props.innerRadius) * radiusRatio;
+            const pos = {
+              x: props.x + Math.cos(angle) * radius,
+              y: props.y + Math.sin(angle) * radius
+            };
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.font = `${fontSize}px Sora, Avenir Next, Segoe UI, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(`${pct.toFixed(1)}%`, pos.x, pos.y);
+            ctx.restore();
+          });
+        });
+      }
+    };
+    const barValueLabels = {
+      id: "barValueLabels",
+      afterDatasetsDraw(chart, args, opts) {
+        if (chart.config.type !== "bar") return;
+        if (!opts || !opts.enabled) return;
+        const { ctx } = chart;
+        chart.data.datasets.forEach((dataset, di) => {
+          if (!chart.isDatasetVisible(di)) return;
+          const meta = chart.getDatasetMeta(di);
+          meta.data.forEach((bar, i) => {
+            const value = dataset.data[i];
+            if (value === null || value === undefined || value === 0) return;
+            const text = opts.formatter ? opts.formatter(value, dataset, i) : value;
+            const pos = bar.tooltipPosition();
+            ctx.save();
+            ctx.fillStyle = opts.color || "#111827";
+            ctx.font = `${opts.fontSize || 11}px Sora, Avenir Next, Segoe UI, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(text, pos.x, pos.y - (opts.offset || 4));
+            ctx.restore();
+          });
+        });
+      }
+    };
+    Chart.register(doughnutPercentLabels, barValueLabels);
+
     const COLUMN_SYNONYMS = {
       student: ["alumno", "alumna", "estudiante", "student"],
       school: ["centro", "centro de procedencia", "colegio", "procedencia", "school", "origin"],
       average: ["media", "nota media", "nota", "calificacion", "promedio"],
       fails: ["suspensos", "suspenso", "fails", "fallos"],
-      bilingual: ["bilingue", "bilingüe"]
+      bilingual: ["bilingue", "bilingüe"],
+      repeater: ["repetidor", "repetidores", "repite", "repeticion"]
     };
 
     function normalizeHeader(text) {
@@ -550,6 +714,42 @@
         if (synonyms.some(s => nh.includes(normalizeHeader(s)))) return h;
       }
       return null;
+    }
+
+    function guessSchoolColumn(headers) {
+      let best = null;
+      let bestScore = -1;
+      headers.forEach(h => {
+        const nh = normalizeHeader(h);
+        if (!nh || nh.includes("unnamed") || nh.includes("total")) return;
+        let score = -1;
+        if (nh.includes("colegio") && !nh.includes("procedencia")) score = 3;
+        else if (nh.includes("procedencia")) score = 2;
+        else if (nh.includes("centro")) score = 1;
+        if (score > bestScore) {
+          bestScore = score;
+          best = h;
+        }
+      });
+      return best;
+    }
+
+    function guessMatchSchoolColumn(headers) {
+      let best = null;
+      let bestScore = -1;
+      headers.forEach(h => {
+        const nh = normalizeHeader(h);
+        if (!nh || nh.includes("unnamed") || nh.includes("total")) return;
+        let score = -1;
+        if (nh.includes("procedencia")) score = 3;
+        else if (nh.includes("colegio") && !nh.includes("procedencia")) score = 2;
+        else if (nh.includes("centro")) score = 1;
+        if (score > bestScore) {
+          bestScore = score;
+          best = h;
+        }
+      });
+      return best;
     }
 
     function detectSubjectColumns(headers, reserved) {
@@ -573,16 +773,30 @@
       return isFinite(n) ? n : null;
     }
 
+    function isRepeaterValue(value) {
+      if (value === null || value === undefined || value === "") return false;
+      if (typeof value === "number") return value > 0;
+      const v = String(value).trim().toLowerCase();
+      if (!v) return false;
+      return ["si", "sí", "s", "true", "1", "x"].includes(v);
+    }
+
+    function isBilingualValue(value) {
+      if (value === null || value === undefined || value === "") return false;
+      if (typeof value === "number") return value > 0;
+      const v = String(value).trim().toLowerCase();
+      if (!v) return false;
+      if (["si", "sí", "s", "true", "1", "x", "y", "yes", "bilingue", "bilingüe"].includes(v)) return true;
+      if (["no", "n", "false", "0"].includes(v)) return false;
+      return /biling/i.test(v);
+    }
+
     function readExcel(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
-            resolve(rows);
+            resolve(readExcelFromArrayBuffer(e.target.result));
           } catch (err) { reject(err); }
         };
         reader.onerror = reject;
@@ -590,38 +804,74 @@
       });
     }
 
+    function readExcelFromArrayBuffer(buffer) {
+      const data = new Uint8Array(buffer);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(sheet, { defval: null });
+    }
+
     // ============================
     // Limpieza y normalización
     // ============================
+    function normalizeSchoolName(value) {
+      let s = String(value || "").trim();
+      if (!s) return "Sin especificar";
+      s = s.replace(/\s+/g, " ");
+      s = s.replace(/^\d{8}\s*-\s*/i, "");
+      const prefixPattern = /^(c\.?\s*e\.?\s*i\.?\s*p\.?|c\.?\s*e\.?\s*p\.?\s*r\.?|c\.?\s*e\.?\s*pr\.?|c\.?\s*d\.?\s*p\.?|c\.?\s*e\.?\s*p\.?|c\.?\s*p\.?|ceip|cepr|cep|cp|cdp|colegio(?:\s+p[úu]blico)?|colegio\s+publico)\b\.?\s*/i;
+      s = s.replace(prefixPattern, "");
+      s = s.replace(/^[\s\-.:]+/, "");
+      s = s.replace(/\s+/g, " ").trim();
+      return s || "Sin especificar";
+    }
+
+    function normalizeSchoolKey(value) {
+      const base = normalizeSchoolName(value);
+      return base
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
     function cleanRows(rawRows, options = { excludeRepetidor: true }) {
       if (!rawRows || !rawRows.length) return { rows: [], subjects: [] };
       const headers = Object.keys(rawRows[0]);
-      const schoolCol = guessColumn(headers, COLUMN_SYNONYMS.school);
+      const displayCol = guessSchoolColumn(headers) || guessColumn(headers, COLUMN_SYNONYMS.school);
+      const matchCol = guessMatchSchoolColumn(headers) || displayCol;
       const avgCol = guessColumn(headers, COLUMN_SYNONYMS.average);
       const failCol = guessColumn(headers, COLUMN_SYNONYMS.fails);
+      const repeatCol = guessColumn(headers, COLUMN_SYNONYMS.repeater);
+      const bilingualCol = guessColumn(headers, COLUMN_SYNONYMS.bilingual);
 
-      const reserved = new Set([schoolCol, avgCol, failCol].filter(Boolean));
+      const reserved = new Set([displayCol, matchCol, avgCol, failCol, repeatCol, bilingualCol].filter(Boolean));
       const subjects = detectSubjectColumns(headers, reserved);
 
       const rows = rawRows
         .filter(r => r && Object.values(r).some(v => v !== null && v !== ""))
         .map(r => {
-          const school = (r[schoolCol] || "Sin especificar").toString().trim();
+          const labelRaw = r[displayCol] || r[matchCol] || "Sin especificar";
+          const matchRaw = r[matchCol] || labelRaw || "Sin especificar";
+          const school = normalizeSchoolName(labelRaw);
+          const schoolKey = normalizeSchoolKey(matchRaw);
           const avg = toNumber(r[avgCol]);
           const fails = toNumber(r[failCol]);
+          const isRepeater = repeatCol ? isRepeaterValue(r[repeatCol]) : false;
+          const isBilingual = bilingualCol ? isBilingualValue(r[bilingualCol]) : false;
           const subjectScores = {};
           subjects.forEach(s => {
             const v = toNumber(r[s]);
             if (v !== null) subjectScores[s] = v;
           });
-          return { school, avg, fails, subjectScores };
+          return { school, schoolKey, avg, fails, subjectScores, isRepeater, isBilingual };
         })
         .filter(r => {
           const schoolLower = r.school ? r.school.toLowerCase() : "";
           if (!schoolLower) return false;
           if (schoolLower === "total") return false;
-          // Excluir alumnado marcado como repetidor en el campo colegio
-          if (options.excludeRepetidor && schoolLower === "repetidor") return false;
+          if (options.excludeRepetidor && (r.isRepeater || schoolLower === "repetidor")) return false;
           return true;
         });
 
@@ -653,8 +903,9 @@
     function aggregateBySchool(rows, subjects) {
       const map = new Map();
       rows.forEach(r => {
-        if (!map.has(r.school)) {
-          map.set(r.school, {
+        const key = r.schoolKey || normalizeSchoolKey(r.school);
+        if (!map.has(key)) {
+          map.set(key, {
             school: r.school,
             students: 0,
             averages: [],
@@ -662,7 +913,7 @@
             subjectScores: {}
           });
         }
-        const entry = map.get(r.school);
+        const entry = map.get(key);
         entry.students += 1;
         if (r.avg !== null) entry.averages.push(r.avg);
         if (r.fails !== null) entry.fails.push(r.fails);
@@ -700,10 +951,11 @@
     function aggregateFailBins(rows, subjects) {
       const map = new Map();
       rows.forEach(r => {
-        if (!map.has(r.school)) {
-          map.set(r.school, { school: r.school, total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 });
+        const key = r.schoolKey || normalizeSchoolKey(r.school);
+        if (!map.has(key)) {
+          map.set(key, { school: r.school, total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 });
         }
-        const entry = map.get(r.school);
+        const entry = map.get(key);
         const fails = countFailsForRow(r, subjects);
         entry.total += 1;
         entry.sumFails += fails;
@@ -711,6 +963,20 @@
         else if (fails <= 2) entry.b12 += 1;
         else if (fails <= 5) entry.b35 += 1;
         else entry.b5p += 1;
+      });
+      return map;
+    }
+
+    function aggregateRepeaters(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        const key = r.schoolKey || normalizeSchoolKey(r.school);
+        if (!map.has(key)) {
+          map.set(key, { school: r.school, repeaters: 0, total: 0 });
+        }
+        const entry = map.get(key);
+        entry.total += 1;
+        if (r.isRepeater) entry.repeaters += 1;
       });
       return map;
     }
@@ -729,19 +995,42 @@
       return total;
     }
 
+    function aggregateFailTotalsByBilingual(rows, subjects) {
+      const blank = () => ({ total: 0, b0: 0, b12: 0, b35: 0, b5p: 0 });
+      const all = blank();
+      const bilingual = blank();
+      const nonBilingual = blank();
+      rows.forEach(r => {
+        const fails = countFailsForRow(r, subjects);
+        const target = r.isBilingual ? bilingual : nonBilingual;
+        all.total += 1;
+        target.total += 1;
+        if (fails === 0) {
+          all.b0 += 1; target.b0 += 1;
+        } else if (fails <= 2) {
+          all.b12 += 1; target.b12 += 1;
+        } else if (fails <= 5) {
+          all.b35 += 1; target.b35 += 1;
+        } else {
+          all.b5p += 1; target.b5p += 1;
+        }
+      });
+      return { all, bilingual, nonBilingual };
+    }
+
     function mergeYearData(prevMap, currMap, subjects) {
       const schools = new Set([...prevMap.keys(), ...currMap.keys()]);
       const merged = [];
-      schools.forEach(school => {
-        const prev = prevMap.get(school) || {};
-        const curr = currMap.get(school) || {};
+      schools.forEach(key => {
+        const prev = prevMap.get(key) || {};
+        const curr = currMap.get(key) || {};
         const prevMean = prev.mean ?? null;
         const currMean = curr.mean ?? null;
         const delta = (currMean !== null && prevMean !== null) ? currMean - prevMean : null;
         const deltaPct = (delta !== null && prevMean) ? (delta / prevMean) * 100 : null;
         const failPct = curr.failPct ?? null;
         merged.push({
-          school,
+          school: curr.school || prev.school || "Sin especificar",
           students: curr.students ?? prev.students ?? 0,
           prevMean,
           currMean,
@@ -772,7 +1061,7 @@
       const totalCurr = data.reduce((acc, d) => acc + (d.curr?.students || 0), 0);
       const totalPrev = data.reduce((acc, d) => acc + (d.prev?.students || 0), 0);
 
-      const rows = [...data].sort((a, b) => (b.curr?.students || 0) - (a.curr?.students || 0));
+      const rows = [...data].sort((a, b) => a.school.localeCompare(b.school, "es"));
       rows.forEach(d => {
         const currStudents = d.curr?.students || 0;
         const prevStudents = d.prev?.students || 0;
@@ -800,84 +1089,145 @@
       absBody.innerHTML = "";
       pctBody.innerHTML = "";
 
-      const totalRows = [
-        { school: "TOTAL 1º (incluye repetidores)", course: "Actual", data: state.failBins.totalCurr },
-        { school: "TOTAL 1º (incluye repetidores)", course: "Anterior", data: state.failBins.totalPrev }
-      ];
-      totalRows.forEach(r => {
-        if (!r.data) return;
-        const { b0, b12, b35, b5p, total, sumFails } = r.data;
-        const meanFails = total ? (sumFails / total) : 0;
-        const trAbs = document.createElement("tr");
-        trAbs.className = "total-row";
-        trAbs.innerHTML = `
-          <td><strong>${r.school}</strong></td>
-          <td><strong>${r.course}</strong></td>
-          <td><strong>${b0}</strong></td>
-          <td><strong>${b12}</strong></td>
-          <td><strong>${b35}</strong></td>
-          <td><strong>${b5p}</strong></td>
-          <td><strong>${format(meanFails, 2)}</strong></td>
-          <td><strong>${total}</strong></td>
-        `;
-        absBody.appendChild(trAbs);
-
-        const pct = (v) => total ? (v / total) * 100 : 0;
-        const trPct = document.createElement("tr");
-        trPct.className = "total-row";
-        trPct.innerHTML = `
-          <td><strong>${r.school}</strong></td>
-          <td><strong>${r.course}</strong></td>
-          <td><strong>${format(pct(b0), 1)}%</strong></td>
-          <td><strong>${format(pct(b12), 1)}%</strong></td>
-          <td><strong>${format(pct(b35), 1)}%</strong></td>
-          <td><strong>${format(pct(b5p), 1)}%</strong></td>
-        `;
-        pctBody.appendChild(trPct);
-      });
-
-      const allSchools = Array.from(new Set([
+      const allKeys = Array.from(new Set([
         ...state.failBins.curr.keys(),
         ...state.failBins.prev.keys()
       ])).sort();
 
-      const visibleSchools = schools ? allSchools.filter(s => schools.includes(s)) : allSchools;
+      const visibleKeys = schools
+        ? schools.map(s => state.schoolKeyByLabel.get(normalizeSchoolKey(s)) || s).filter(s => allKeys.includes(s))
+        : allKeys;
 
       const rows = [];
-      visibleSchools.forEach(school => {
-        const curr = state.failBins.curr.get(school);
-        const prev = state.failBins.prev.get(school);
-        if (curr) rows.push({ school, course: "Actual", data: curr });
-        if (prev) rows.push({ school, course: "Anterior", data: prev });
+      const list = sortKeysByLabel(visibleKeys.length ? visibleKeys : allKeys);
+
+      list.forEach(key => {
+        const curr = state.failBins.curr.get(key);
+        const prev = state.failBins.prev.get(key);
+        const label = state.schoolLabels.get(key) || key;
+        rows.push({ key, school: label, prev, curr, isTotal: false });
       });
 
+      rows.unshift({
+        key: "__total__",
+        school: "TOTAL 1º",
+        prev: state.failBins.totalPrev,
+        curr: state.failBins.totalCurr,
+        isTotal: true
+      });
+
+      const renderPair = (curr, prev, fmt) => {
+        const currText = fmt(curr);
+        const prevText = fmt(prev);
+        return `<span>${currText}</span> <span class="prev-lite">${prevText}</span>`;
+      };
+
       rows.forEach(r => {
-        const { b0, b12, b35, b5p, total, sumFails } = r.data;
-        const meanFails = total ? (sumFails / total) : 0;
+        const prev = r.prev || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
+        const curr = r.curr || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
+
+        const prevMean = prev.total ? (prev.sumFails / prev.total) : 0;
+        const currMean = curr.total ? (curr.sumFails / curr.total) : 0;
+
         const trAbs = document.createElement("tr");
+        if (r.isTotal) trAbs.className = "total-row";
         trAbs.innerHTML = `
-          <td>${r.school}</td>
-          <td>${r.course}</td>
-          <td>${b0}</td>
-          <td>${b12}</td>
-          <td>${b35}</td>
-          <td>${b5p}</td>
-          <td>${format(meanFails, 2)}</td>
-          <td>${total}</td>
+          <td>${r.isTotal ? `<strong>${r.school}</strong>` : r.school}</td>
+          <td>${renderPair(curr.b0, prev.b0, v => v)}</td>
+          <td>${renderPair(curr.b12, prev.b12, v => v)}</td>
+          <td>${renderPair(curr.b35, prev.b35, v => v)}</td>
+          <td>${renderPair(curr.b5p, prev.b5p, v => v)}</td>
+          <td>${renderPair(currMean, prevMean, v => format(v, 2))}</td>
+          <td>${renderPair(curr.total, prev.total, v => v)}</td>
         `;
         absBody.appendChild(trAbs);
 
-        const pct = (v) => total ? (v / total) * 100 : 0;
+        const prevPct = (v) => prev.total ? (v / prev.total) * 100 : 0;
+        const currPct = (v) => curr.total ? (v / curr.total) * 100 : 0;
         const trPct = document.createElement("tr");
+        if (r.isTotal) trPct.className = "total-row";
         trPct.innerHTML = `
-          <td>${r.school}</td>
-          <td>${r.course}</td>
-          <td>${format(pct(b0), 1)}%</td>
-          <td>${format(pct(b12), 1)}%</td>
-          <td>${format(pct(b35), 1)}%</td>
-          <td>${format(pct(b5p), 1)}%</td>
+          <td>${r.isTotal ? `<strong>${r.school}</strong>` : r.school}</td>
+          <td>${renderPair(currPct(curr.b0), prevPct(prev.b0), v => `${format(v, 1)}%`)}</td>
+          <td>${renderPair(currPct(curr.b12), prevPct(prev.b12), v => `${format(v, 1)}%`)}</td>
+          <td>${renderPair(currPct(curr.b35), prevPct(prev.b35), v => `${format(v, 1)}%`)}</td>
+          <td>${renderPair(currPct(curr.b5p), prevPct(prev.b5p), v => `${format(v, 1)}%`)}</td>
         `;
         pctBody.appendChild(trPct);
+      });
+    }
+
+    function renderRepeatersTable(schools = null) {
+      const body = $("repeatersBody");
+      if (!body) return;
+      body.innerHTML = "";
+
+      const allKeys = Array.from(new Set([
+        ...state.repeaters.curr.keys(),
+        ...state.repeaters.prev.keys()
+      ])).sort();
+
+      const visibleKeys = schools
+        ? schools.map(s => state.schoolKeyByLabel.get(normalizeSchoolKey(s)) || s).filter(s => allKeys.includes(s))
+        : allKeys;
+
+      const list = sortKeysByLabel(visibleKeys.length ? visibleKeys : allKeys);
+      list.forEach(key => {
+        const curr = state.repeaters.curr.get(key);
+        const prev = state.repeaters.prev.get(key);
+        const label = state.schoolLabels.get(key) || key;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${label}</td>
+          <td>${prev ? prev.repeaters || 0 : 0}</td>
+          <td>${curr ? curr.repeaters || 0 : 0}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderFailDetailGrids(schools = null) {
+      const absGrid = $("failAbsDetailGrid");
+      const pctGrid = $("failPctDetailGrid");
+      if (!absGrid || !pctGrid) return;
+      absGrid.innerHTML = "";
+      pctGrid.innerHTML = "";
+
+      const allKeys = Array.from(new Set([
+        ...state.failBins.curr.keys(),
+        ...state.failBins.prev.keys()
+      ])).sort();
+      const keys = sortKeysByLabel(schools && schools.length ? schools : allKeys.slice(0, 4));
+
+      keys.forEach((key, idx) => {
+        const label = state.schoolLabels.get(key) || key;
+
+        const absCard = document.createElement("div");
+        absCard.className = "card chart-card";
+        absCard.innerHTML = `
+          <h3>${label}</h3>
+          <canvas id="failAbsDetail-${idx}"></canvas>
+        `;
+        absGrid.appendChild(absCard);
+
+        const pctCard = document.createElement("div");
+        pctCard.className = "card chart-card";
+        pctCard.innerHTML = `
+          <h3>${label}</h3>
+          <div class="mini-grid">
+            <div>
+              <p class="prev-legend">Anterior</p>
+              <canvas id="failPctPrevDetail-${idx}"></canvas>
+            </div>
+            <div>
+              <p class="prev-legend">Actual</p>
+              <canvas id="failPctCurrDetail-${idx}"></canvas>
+            </div>
+          </div>
+        `;
+        pctGrid.appendChild(pctCard);
+
+        renderFailSingleCharts(key, `failAbsDetail-${idx}`, `failPctPrevDetail-${idx}`, `failPctCurrDetail-${idx}`);
       });
     }
 
@@ -888,21 +1238,23 @@
 
       absSelect.innerHTML = "";
       pctSelect.innerHTML = "";
-      state.top4.forEach(s => {
+      state.top4.forEach(key => {
+        const label = state.schoolLabels.get(key) || key;
         const opt1 = document.createElement("option");
-        opt1.value = s;
-        opt1.textContent = s;
+        opt1.value = key;
+        opt1.textContent = label;
         absSelect.appendChild(opt1);
 
         const opt2 = document.createElement("option");
-        opt2.value = s;
-        opt2.textContent = s;
+        opt2.value = key;
+        opt2.textContent = label;
         pctSelect.appendChild(opt2);
       });
     }
 
-    function renderFailSingleCharts(school, absId = "failAbsSingleChart", pctId = "failPctSingleChart") {
+    function renderFailSingleCharts(school, absId, pctPrevId, pctCurrId) {
       if (!school) return;
+      const key = state.schoolKeyByLabel.get(normalizeSchoolKey(school)) || school;
       const bins = [
         { key: "b0", label: "0", color: "#9CCEF4", border: "#5FA8E4" },
         { key: "b12", label: "1-2", color: "#B7E4C7", border: "#7BCFA7" },
@@ -910,59 +1262,87 @@
         { key: "b5p", label: ">5", color: "#E7C6FF", border: "#C9A5F3" }
       ];
       const labels = bins.map(b => b.label);
-      const curr = state.failBins.curr.get(school) || { total: 0 };
-      const prev = state.failBins.prev.get(school) || { total: 0 };
+      const curr = state.failBins.curr.get(key) || { total: 0 };
+      const prev = state.failBins.prev.get(key) || { total: 0 };
 
       const currAbs = bins.map(b => curr[b.key] || 0);
       const prevAbs = bins.map(b => prev[b.key] || 0);
       const currPct = bins.map(b => curr.total ? ((curr[b.key] || 0) / curr.total) * 100 : 0);
       const prevPct = bins.map(b => prev.total ? ((prev[b.key] || 0) / prev.total) * 100 : 0);
 
-      if (absId === "failAbsSingleChart" && state.charts.failAbsSingle) state.charts.failAbsSingle.destroy();
-      if (pctId === "failPctSingleChart" && state.charts.failPctSingle) state.charts.failPctSingle.destroy();
+      if (absId) {
+        const existingAbs = Chart.getChart($(absId));
+        if (existingAbs) existingAbs.destroy();
+      }
+      if (pctPrevId) {
+        const existingPrev = Chart.getChart($(pctPrevId));
+        if (existingPrev) existingPrev.destroy();
+      }
+      if (pctCurrId) {
+        const existingCurr = Chart.getChart($(pctCurrId));
+        if (existingCurr) existingCurr.destroy();
+      }
 
-      const absChart = new Chart($(absId).getContext("2d"), {
+      const absChart = absId ? new Chart($(absId).getContext("2d"), {
         type: "bar",
         data: {
           labels,
           datasets: [
-            { label: "Actual", data: currAbs, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 },
-            { label: "Anterior", data: prevAbs, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 }
+            { label: "Anterior", data: prevAbs, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 },
+            { label: "Actual", data: currAbs, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } } },
+          plugins: {
+            barValueLabels: { enabled: true, formatter: v => v },
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } }
+          },
           scales: {
             x: { ticks: { color: "#475569" } },
-            y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#475569" } }
+            y: { beginAtZero: true, min: 0, max: 50, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#475569" } }
           }
         }
-      });
+      }) : null;
 
-      const pctChart = new Chart($(pctId).getContext("2d"), {
-        type: "bar",
+      const pieOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1,
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total ? (ctx.parsed / total) * 100 : 0;
+                return `${ctx.label}: ${pct.toFixed(1)}%`;
+              }
+            }
+          }
+        }
+      };
+
+      const prevPie = pctPrevId ? new Chart($(pctPrevId).getContext("2d"), {
+        type: "pie",
         data: {
           labels,
-          datasets: [
-            { label: "Actual", data: currPct, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 },
-            { label: "Anterior", data: prevPct, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 }
-          ]
+          datasets: [{ label: "Anterior", data: prevPct, backgroundColor: ["#9CCEF4", "#B7E4C7", "#FFD6A5", "#E7C6FF"], borderColor: "#ffffff", borderWidth: 2 }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } } },
-          scales: {
-            x: { ticks: { color: "#475569" } },
-            y: { beginAtZero: true, max: 100, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#475569", callback: v => `${v}%` } }
-          }
-        }
-      });
+        options: pieOptions
+      }) : null;
+      const currPie = pctCurrId ? new Chart($(pctCurrId).getContext("2d"), {
+        type: "pie",
+        data: {
+          labels,
+          datasets: [{ label: "Actual", data: currPct, backgroundColor: ["#9CCEF4", "#B7E4C7", "#FFD6A5", "#E7C6FF"], borderColor: "#ffffff", borderWidth: 2 }]
+        },
+        options: pieOptions
+      }) : null;
 
-      if (absId === "failAbsSingleChart") state.charts.failAbsSingle = absChart;
-      if (pctId === "failPctSingleChart") state.charts.failPctSingle = pctChart;
+      if (absId) state.charts.failAbsSingle = absChart;
+      if (pctPrevId || pctCurrId) state.charts.failPctSingle = prevPie || currPie;
     }
 
     function renderCenterTabs() {
@@ -971,14 +1351,16 @@
       // Remove existing center tabs
       tabsContainer.querySelectorAll(".center-tab").forEach(btn => btn.remove());
 
-      state.top4.forEach((school, idx) => {
+      state.top4.forEach((key, idx) => {
         const tabId = `center-${idx}`;
-        const schoolName = `C.E.I.P. ${school}`;
+        const schoolName = state.schoolLabels.get(key) || key;
         const btn = document.createElement("button");
         btn.className = "tab-btn center-tab";
         btn.dataset.tab = tabId;
         btn.textContent = schoolName;
-        tabsContainer.appendChild(btn);
+        const adminBtn = tabsContainer.querySelector('[data-tab="admin"]');
+        if (adminBtn) tabsContainer.insertBefore(btn, adminBtn);
+        else tabsContainer.appendChild(btn);
 
         const panel = document.createElement("section");
         panel.className = "tab-panel";
@@ -986,7 +1368,7 @@
         panel.innerHTML = `
           <header>
             <div class="brand">
-              <img src="maju22.bmp" alt="IES El Majuelo" />
+              <img src="maju22.jpg" alt="IES El Majuelo" />
               <div>
                 <h1 class="title">Tránsito 2025-26. IES El Majuelo</h1>
               </div>
@@ -1006,17 +1388,18 @@
           </div>
           <div class="card">
             <h3>Suspensos (datos absolutos)</h3>
+            <p class="prev-legend">Negro: 25/26 · Gris: 24/25</p>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Curso</th>
+                    <th>Centro</th>
                     <th>0</th>
                     <th>1-2</th>
                     <th>3-5</th>
                     <th>&gt;5</th>
-                    <th>Media suspensos</th>
-                    <th>Total alumnos</th>
+                    <th>Media</th>
+                    <th>Total</th>
                   </tr>
                 </thead>
                 <tbody id="abs-${tabId}"></tbody>
@@ -1025,11 +1408,12 @@
           </div>
           <div class="card">
             <h3>Suspensos (% sobre total)</h3>
+            <p class="prev-legend">Negro: 25/26 · Gris: 24/25</p>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Curso</th>
+                    <th>Centro</th>
                     <th>0</th>
                     <th>1-2</th>
                     <th>3-5</th>
@@ -1045,73 +1429,100 @@
               <h3>Suspensos (absolutos)</h3>
               <canvas id="absChart-${tabId}"></canvas>
             </div>
+          </div>
+          <div class="mini-grid">
             <div class="card chart-card">
-              <h3>Suspensos (% sobre total)</h3>
-              <canvas id="pctChart-${tabId}"></canvas>
+              <h3>Suspensos (% sobre total) — anterior</h3>
+              <canvas id="pctPrevChart-${tabId}"></canvas>
+            </div>
+            <div class="card chart-card">
+              <h3>Suspensos (% sobre total) — actual</h3>
+              <canvas id="pctCurrChart-${tabId}"></canvas>
             </div>
           </div>
         `;
         panels.appendChild(panel);
 
-        const renderAbsRow = (label, data) => {
-          const total = data.total || 0;
-          const meanFails = total ? (data.sumFails / total) : 0;
-          const isTotal = label.toLowerCase().includes("total");
-          return `
-            <tr class="${isTotal ? "total-row" : ""}">
-              <td>${label}</td>
-              <td>${data.b0}</td>
-              <td>${data.b12}</td>
-              <td>${data.b35}</td>
-              <td>${data.b5p}</td>
-              <td>${format(meanFails, 2)}</td>
-              <td>${total}</td>
-            </tr>
-          `;
-        };
-        const renderPctRow = (label, data) => {
-          const total = data.total || 0;
-          const pct = (v) => total ? (v / total) * 100 : 0;
-          const isTotal = label.toLowerCase().includes("total");
-          return `
-            <tr class="${isTotal ? "total-row" : ""}">
-              <td>${label}</td>
-              <td>${format(pct(data.b0), 1)}%</td>
-              <td>${format(pct(data.b12), 1)}%</td>
-              <td>${format(pct(data.b35), 1)}%</td>
-              <td>${format(pct(data.b5p), 1)}%</td>
-            </tr>
-          `;
+        const renderPair = (curr, prev, fmt) => {
+          const currText = fmt(curr);
+          const prevText = fmt(prev);
+          return `<span>${currText}</span> <span class="prev-lite">${prevText}</span>`;
         };
 
-        const curr = state.failBins.curr.get(school) || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
-        const prev = state.failBins.prev.get(school) || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
+        const curr = state.failBins.curr.get(key) || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
+        const prev = state.failBins.prev.get(key) || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
         const totalCurr = state.failBins.totalCurr || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
         const totalPrev = state.failBins.totalPrev || { total: 0, sumFails: 0, b0: 0, b12: 0, b35: 0, b5p: 0 };
 
         const absBody = $(`abs-${tabId}`);
         const pctBody = $(`pct-${tabId}`);
+
+        const buildAbsRow = (label, c, p, isTotal) => {
+          const cMean = c.total ? (c.sumFails / c.total) : 0;
+          const pMean = p.total ? (p.sumFails / p.total) : 0;
+          return `
+            <tr class="${isTotal ? "total-row" : ""}">
+              <td>${isTotal ? `<strong>${label}</strong>` : label}</td>
+              <td>${renderPair(c.b0, p.b0, v => v)}</td>
+              <td>${renderPair(c.b12, p.b12, v => v)}</td>
+              <td>${renderPair(c.b35, p.b35, v => v)}</td>
+              <td>${renderPair(c.b5p, p.b5p, v => v)}</td>
+              <td>${renderPair(cMean, pMean, v => format(v, 2))}</td>
+              <td>${renderPair(c.total, p.total, v => v)}</td>
+            </tr>
+          `;
+        };
+
+        const buildPctRow = (label, c, p, isTotal) => {
+          const cPct = (v) => c.total ? (v / c.total) * 100 : 0;
+          const pPct = (v) => p.total ? (v / p.total) * 100 : 0;
+          return `
+            <tr class="${isTotal ? "total-row" : ""}">
+              <td>${isTotal ? `<strong>${label}</strong>` : label}</td>
+              <td>${renderPair(cPct(c.b0), pPct(p.b0), v => `${format(v, 1)}%`)}</td>
+              <td>${renderPair(cPct(c.b12), pPct(p.b12), v => `${format(v, 1)}%`)}</td>
+              <td>${renderPair(cPct(c.b35), pPct(p.b35), v => `${format(v, 1)}%`)}</td>
+              <td>${renderPair(cPct(c.b5p), pPct(p.b5p), v => `${format(v, 1)}%`)}</td>
+            </tr>
+          `;
+        };
+
         absBody.innerHTML = [
-          renderAbsRow("Actual (centro)", curr),
-          renderAbsRow("Anterior (centro)", prev),
-          renderAbsRow("Total 1º (actual)", totalCurr),
-          renderAbsRow("Total 1º (anterior)", totalPrev)
+          buildAbsRow(schoolName, curr, prev, false),
+          buildAbsRow("TOTAL 1º", totalCurr, totalPrev, true)
         ].join("");
         pctBody.innerHTML = [
-          renderPctRow("Actual (centro)", curr),
-          renderPctRow("Anterior (centro)", prev),
-          renderPctRow("Total 1º (actual)", totalCurr),
-          renderPctRow("Total 1º (anterior)", totalPrev)
+          buildPctRow(schoolName, curr, prev, false),
+          buildPctRow("TOTAL 1º", totalCurr, totalPrev, true)
         ].join("");
 
-        renderFailSingleCharts(school, `absChart-${tabId}`, `pctChart-${tabId}`);
+        renderFailSingleCharts(key, `absChart-${tabId}`, `pctPrevChart-${tabId}`, `pctCurrChart-${tabId}`);
       });
     }
 
     function exportTabToPdf(tabId) {
-      const panel = $(`tab-${tabId}`);
+      const panel = tabId === "results" ? $("tab-results") : $(`tab-${tabId}`);
       if (!panel) return;
+      if (tabId === "results") {
+        const absTotalCard = panel.querySelector("#failAbsTotalChart")?.closest(".card");
+        if (absTotalCard) absTotalCard.classList.add("page-break");
+        const absDetailCard = panel.querySelector("#failAbsDetailGrid")?.closest(".card");
+        if (absDetailCard) absDetailCard.classList.add("page-break");
+        const pctConjuntoCard = panel.querySelector("#failPctChart")?.closest(".card");
+        if (pctConjuntoCard) pctConjuntoCard.classList.add("page-break");
+      }
       const clone = panel.cloneNode(true);
+      if (tabId === "results") {
+        const absTotalCardClone = clone.querySelector("#failAbsTotalChart")?.closest(".card");
+        if (absTotalCardClone) absTotalCardClone.classList.add("page-break");
+        const absDetailCardClone = clone.querySelector("#failAbsDetailGrid")?.closest(".card");
+        if (absDetailCardClone) absDetailCardClone.classList.add("page-break");
+        const pctConjuntoCardClone = clone.querySelector("#failPctChart")?.closest(".card");
+        if (pctConjuntoCardClone) pctConjuntoCardClone.classList.add("page-break");
+        const endBreak = clone.ownerDocument.createElement("div");
+        endBreak.className = "page-break";
+        clone.appendChild(endBreak);
+      }
       // Replace canvases with images
       const originals = panel.querySelectorAll("canvas");
       const clones = clone.querySelectorAll("canvas");
@@ -1133,9 +1544,12 @@
           .chart-card { padding: 12px; }
           .dist-panel { grid-template-columns: 1fr 1fr; }
           .export-charts { break-before: page; page-break-before: always; }
+          .page-break { break-before: page; page-break-before: always; }
         }
         img { max-width: 100%; height: auto; display: block; }
       `;
+      const headerClone = tabId === "results" ? document.querySelector("#mainHeader")?.cloneNode(true) : null;
+      const headerHtml = headerClone ? headerClone.outerHTML : "";
       win.document.write(`
         <html>
           <head>
@@ -1143,7 +1557,7 @@
             <style>${styles}\n${printStyles}</style>
           </head>
           <body>
-            <div class="app">${clone.innerHTML}</div>
+            <div class="app">${headerHtml}${clone.innerHTML}</div>
           </body>
         </html>
       `);
@@ -1197,14 +1611,17 @@
         data: {
           labels,
           datasets: [
-            { label: "Actual", data: currAbs, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 },
-            { label: "Anterior", data: prevAbs, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 }
+            { label: "Anterior", data: prevAbs, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 },
+            { label: "Actual", data: currAbs, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } } },
+          plugins: {
+            barValueLabels: { enabled: true, formatter: v => v },
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } }
+          },
           scales: {
             x: { ticks: { color: "#475569" } },
             y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#475569" } }
@@ -1217,14 +1634,17 @@
         data: {
           labels,
           datasets: [
-            { label: "Actual", data: currPct, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 },
-            { label: "Anterior", data: prevPct, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 }
+            { label: "Anterior", data: prevPct, backgroundColor: "#E7C6FF", borderColor: "#C9A5F3", borderWidth: 1, borderRadius: 8 },
+            { label: "Actual", data: currPct, backgroundColor: "#BFD7EA", borderColor: "#5FA8E4", borderWidth: 1, borderRadius: 8 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } } },
+          plugins: {
+            barValueLabels: { enabled: true, formatter: v => `${format(v, 1)}%` },
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } }
+          },
           scales: {
             x: { ticks: { color: "#475569" } },
             y: { beginAtZero: true, max: 100, grid: { color: "rgba(0,0,0,0.06)" }, ticks: { color: "#475569", callback: v => `${v}%` } }
@@ -1234,12 +1654,16 @@
     }
 
     function renderFailCharts(schools = null) {
-      const allSchools = Array.from(new Set([
+      const allKeys = Array.from(new Set([
         ...state.failBins.curr.keys(),
         ...state.failBins.prev.keys()
       ])).sort();
-      let visibleSchools = schools ? allSchools.filter(s => schools.includes(s)) : allSchools;
-      if (!visibleSchools.length) visibleSchools = allSchools;
+      let visibleKeys = schools
+        ? schools.map(s => state.schoolKeyByLabel.get(normalizeSchoolKey(s)) || s).filter(s => allKeys.includes(s))
+        : allKeys;
+      if (!visibleKeys.length) visibleKeys = allKeys;
+      visibleKeys = sortKeysByLabel(visibleKeys);
+      const visibleLabels = visibleKeys.map(k => state.schoolLabels.get(k) || k);
 
       const bins = [
         { key: "b0", label: "0", color: "#9CCEF4", border: "#5FA8E4" },
@@ -1267,12 +1691,12 @@
       };
 
       const absDatasets = [
-        ...buildDatasets("curr", "Actual", false, visibleSchools),
-        ...buildDatasets("prev", "Anterior", false, visibleSchools)
+        ...buildDatasets("prev", "Anterior", false, visibleKeys),
+        ...buildDatasets("curr", "Actual", false, visibleKeys)
       ];
       const pctDatasets = [
-        ...buildDatasets("curr", "Actual", true, visibleSchools),
-        ...buildDatasets("prev", "Anterior", true, visibleSchools)
+        ...buildDatasets("prev", "Anterior", true, visibleKeys),
+        ...buildDatasets("curr", "Actual", true, visibleKeys)
       ];
 
       if (state.charts.failAbs) state.charts.failAbs.destroy();
@@ -1280,7 +1704,7 @@
 
       state.charts.failAbs = new Chart($("failAbsChart").getContext("2d"), {
         type: "bar",
-        data: { labels: visibleSchools, datasets: absDatasets },
+        data: { labels: visibleLabels, datasets: absDatasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -1296,7 +1720,7 @@
 
       state.charts.failPct = new Chart($("failPctChart").getContext("2d"), {
         type: "bar",
-        data: { labels: visibleSchools, datasets: pctDatasets },
+        data: { labels: visibleLabels, datasets: pctDatasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -1317,9 +1741,78 @@
       });
     }
 
+    function renderFailBilingualPieCharts(schools = null) {
+      const visibleRows = schools && schools.length
+        ? state.currRows.filter(r => schools.includes(r.schoolKey || normalizeSchoolKey(r.school)))
+        : state.currRows;
+      const visiblePrevRows = schools && schools.length
+        ? state.prevRows.filter(r => schools.includes(r.schoolKey || normalizeSchoolKey(r.school)))
+        : state.prevRows;
+
+      const totals = aggregateFailTotalsByBilingual(visibleRows, state.subjects);
+      const totalsPrev = aggregateFailTotalsByBilingual(visiblePrevRows, state.subjects);
+      const labels = ["0", "1-2", "3-5", ">5"];
+      const colors = ["#9CCEF4", "#B7E4C7", "#FFD6A5", "#E7C6FF"];
+      const borders = ["#5FA8E4", "#7BCFA7", "#FFB570", "#C9A5F3"];
+      const toPct = (g) => {
+        if (!g.total) return [0, 0, 0, 0];
+        return [g.b0, g.b12, g.b35, g.b5p].map(v => (v / g.total) * 100);
+      };
+      const buildData = (g) => ({
+        labels,
+        datasets: [{
+          data: toPct(g),
+          backgroundColor: colors,
+          borderColor: borders,
+          borderWidth: 1.5
+        }]
+      });
+
+      const pieOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        radius: "80%",
+        plugins: {
+          doughnutPercentLabels: { fontSize: 11, minPctToDraw: 0.8, color: "#0f172a", radiusRatio: 0.72 },
+          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: "500" } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.label}: ${format(ctx.parsed, 1)}%`
+            }
+          }
+        }
+      };
+
+      if (state.charts.failPieAll) state.charts.failPieAll.destroy();
+      if (state.charts.failPieAllPrev) state.charts.failPieAllPrev.destroy();
+      if (state.charts.failPieBilingual) state.charts.failPieBilingual.destroy();
+      if (state.charts.failPieNonBilingual) state.charts.failPieNonBilingual.destroy();
+
+      state.charts.failPieAll = new Chart($("failPieAll").getContext("2d"), {
+        type: "pie",
+        data: buildData(totals.all),
+        options: pieOptions
+      });
+      state.charts.failPieAllPrev = new Chart($("failPieAllPrev").getContext("2d"), {
+        type: "pie",
+        data: buildData(totalsPrev.all),
+        options: pieOptions
+      });
+      state.charts.failPieBilingual = new Chart($("failPieBilingual").getContext("2d"), {
+        type: "pie",
+        data: buildData(totals.bilingual),
+        options: pieOptions
+      });
+      state.charts.failPieNonBilingual = new Chart($("failPieNonBilingual").getContext("2d"), {
+        type: "pie",
+        data: buildData(totals.nonBilingual),
+        options: pieOptions
+      });
+    }
+
     function getTopSchoolsByStudents(map, topN = 4) {
-      const list = Array.from(map.values())
-        .map(d => ({ school: d.school, students: d.students || 0 }))
+      const list = Array.from(map.entries())
+        .map(([key, d]) => ({ key, school: d.school, students: d.students || 0 }))
         .sort((a, b) => b.students - a.students)
         .slice(0, topN);
       return list;
@@ -1329,20 +1822,31 @@
       return [...data]
         .sort((a, b) => (b.curr?.students || 0) - (a.curr?.students || 0))
         .slice(0, topN)
-        .map(d => d.school);
+        .map(d => state.schoolKeyByLabel.get(normalizeSchoolKey(d.school)) || normalizeSchoolKey(d.school));
+    }
+
+    function sortKeysByLabel(keys) {
+      return [...keys].sort((a, b) => {
+        const la = (state.schoolLabels.get(a) || a).toLowerCase();
+        const lb = (state.schoolLabels.get(b) || b).toLowerCase();
+        return la.localeCompare(lb, "es");
+      });
     }
 
     function renderDistributionCharts(schools = null) {
       const currTop = getTopSchoolsByStudents(state.currAgg, 4);
       const prevTop = getTopSchoolsByStudents(state.prevAgg, 4);
 
-      const currList = schools ? currTop.filter(d => schools.includes(d.school)) : currTop;
-      const prevList = schools ? prevTop.filter(d => schools.includes(d.school)) : prevTop;
+      const currList = schools ? currTop.filter(d => schools.includes(d.key)) : currTop;
+      const prevList = schools ? prevTop.filter(d => schools.includes(d.key)) : prevTop;
 
-      const currLabels = currList.map(d => d.school);
-      const currData = currList.map(d => d.students);
-      const prevLabels = prevList.map(d => d.school);
-      const prevData = prevList.map(d => d.students);
+      const currListSorted = currList.sort((a, b) => a.school.localeCompare(b.school, "es"));
+      const prevListSorted = prevList.sort((a, b) => a.school.localeCompare(b.school, "es"));
+
+      const currLabels = currListSorted.map(d => d.school);
+      const currData = currListSorted.map(d => d.students);
+      const prevLabels = prevListSorted.map(d => d.school);
+      const prevData = prevListSorted.map(d => d.students);
 
       const palette = ["#9CCEF4", "#B7E4C7", "#FFD6A5", "#E7C6FF"];
       const gridColor = "rgba(0,0,0,0.06)";
@@ -1371,11 +1875,12 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
+            barValueLabels: { enabled: true, formatter: v => v },
             legend: { display: false },
             tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} alumnos` } }
           },
           scales: {
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+            y: { beginAtZero: true, min: 0, max: 50, grid: { color: gridColor }, ticks: { color: tickColor } },
             x: {
               ticks: {
                 color: tickColor,
@@ -1434,11 +1939,12 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
+            barValueLabels: { enabled: true, formatter: v => v },
             legend: { display: false },
             tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} alumnos` } }
           },
           scales: {
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+            y: { beginAtZero: true, min: 0, max: 50, grid: { color: gridColor }, ticks: { color: tickColor } },
             x: {
               ticks: {
                 color: tickColor,
@@ -1491,7 +1997,10 @@
       const topSchools = getTopSchoolsFromMerged(data, 4);
       const visibleSchools = top4 === "top4" ? topSchools : null;
 
-      renderDistributionTable(visibleSchools ? data.filter(d => visibleSchools.includes(d.school)) : data);
+      const filteredData = visibleSchools
+        ? data.filter(d => visibleSchools.includes(state.schoolKeyByLabel.get(normalizeSchoolKey(d.school)) || normalizeSchoolKey(d.school)))
+        : data;
+      renderDistributionTable(filteredData);
       return data;
     }
 
@@ -1522,6 +2031,55 @@
     // ============================
     // Orquestación principal
     // ============================
+    async function processData(prevRaw, currRaw) {
+      const prevClean = cleanRows(prevRaw, { excludeRepetidor: true });
+      const currClean = cleanRows(currRaw, { excludeRepetidor: true });
+      const prevAll = cleanRows(prevRaw, { excludeRepetidor: false });
+      const currAll = cleanRows(currRaw, { excludeRepetidor: false });
+
+      state.subjects = Array.from(new Set([...prevClean.subjects, ...currClean.subjects]));
+      state.prevRows = prevClean.rows;
+      state.currRows = currClean.rows;
+      state.prevRowsAll = prevAll.rows;
+      state.currRowsAll = currAll.rows;
+
+      state.prevAgg = aggregateBySchool(state.prevRows, state.subjects);
+      state.currAgg = aggregateBySchool(state.currRows, state.subjects);
+      state.merged = mergeYearData(state.prevAgg, state.currAgg, state.subjects);
+      state.schoolLabels = new Map();
+      state.schoolKeyByLabel = new Map();
+      const registerLabel = (key, label) => {
+        if (!label) return;
+        if (!state.schoolLabels.has(key)) state.schoolLabels.set(key, label);
+        const norm = normalizeSchoolKey(label);
+        if (!state.schoolKeyByLabel.has(norm)) state.schoolKeyByLabel.set(norm, key);
+      };
+      state.currAgg.forEach((v, k) => registerLabel(k, v.school));
+      state.prevAgg.forEach((v, k) => registerLabel(k, v.school));
+      state.failBins.prev = aggregateFailBins(state.prevRows, state.subjects);
+      state.failBins.curr = aggregateFailBins(state.currRows, state.subjects);
+      state.failBins.totalPrev = aggregateFailTotals(state.prevRowsAll, state.subjects);
+      state.failBins.totalCurr = aggregateFailTotals(state.currRowsAll, state.subjects);
+      state.repeaters.prev = aggregateRepeaters(state.prevRowsAll);
+      state.repeaters.curr = aggregateRepeaters(state.currRowsAll);
+      state.repeaters.curr.forEach((v, k) => registerLabel(k, v.school));
+      state.repeaters.prev.forEach((v, k) => registerLabel(k, v.school));
+
+      const filtered = applyFilters();
+      state.top4 = getTopSchoolsFromMerged(filtered, 4);
+      const topSchools = valueOr("filterTop4", "all") === "top4" ? state.top4 : null;
+      renderDistributionCharts(topSchools);
+      renderFailTables(topSchools);
+      renderRepeatersTable(topSchools);
+      renderFailCharts(topSchools);
+      renderFailBilingualPieCharts(topSchools);
+      renderFailDetailGrids(topSchools);
+      updateTop4Selectors();
+      renderFailTotalCharts();
+      renderCenterTabs();
+      $("status").textContent = `Listo: ${state.merged.length} colegios analizados.`;
+    }
+
     async function processFiles() {
       const prevFile = $("filePrev").files[0];
       const currFile = $("fileCurr").files[0];
@@ -1532,39 +2090,32 @@
       $("status").textContent = "Procesando...";
       try {
         const [prevRaw, currRaw] = await Promise.all([readExcel(prevFile), readExcel(currFile)]);
-        const prevClean = cleanRows(prevRaw, { excludeRepetidor: true });
-        const currClean = cleanRows(currRaw, { excludeRepetidor: true });
-        const prevAll = cleanRows(prevRaw, { excludeRepetidor: false });
-        const currAll = cleanRows(currRaw, { excludeRepetidor: false });
-
-        state.subjects = Array.from(new Set([...prevClean.subjects, ...currClean.subjects]));
-        state.prevRows = prevClean.rows;
-        state.currRows = currClean.rows;
-        state.prevRowsAll = prevAll.rows;
-        state.currRowsAll = currAll.rows;
-
-        state.prevAgg = aggregateBySchool(state.prevRows, state.subjects);
-        state.currAgg = aggregateBySchool(state.currRows, state.subjects);
-        state.merged = mergeYearData(state.prevAgg, state.currAgg, state.subjects);
-        state.failBins.prev = aggregateFailBins(state.prevRows, state.subjects);
-        state.failBins.curr = aggregateFailBins(state.currRows, state.subjects);
-        state.failBins.totalPrev = aggregateFailTotals(state.prevRowsAll, state.subjects);
-        state.failBins.totalCurr = aggregateFailTotals(state.currRowsAll, state.subjects);
-
-        const filtered = applyFilters();
-        state.top4 = getTopSchoolsFromMerged(filtered, 4);
-        const topSchools = valueOr("filterTop4", "all") === "top4" ? state.top4 : null;
-        renderDistributionCharts(topSchools);
-        renderFailTables(topSchools);
-        renderFailCharts(topSchools);
-        updateTop4Selectors();
-        renderFailTotalCharts();
-        renderFailSingleCharts(state.top4[0]);
-        renderCenterTabs();
-        $("status").textContent = `Listo: ${state.merged.length} colegios analizados.`;
+        await processData(prevRaw, currRaw);
       } catch (err) {
         console.error(err);
         $("status").textContent = "Error al procesar los archivos. Verifique el formato.";
+      }
+    }
+
+    async function tryAutoLoad() {
+      const prevName = "1Eval2425.xlsx";
+      const currName = "1Eval2526.xlsx";
+      try {
+        const [prevRes, currRes] = await Promise.all([
+          fetch(prevName, { cache: "no-store" }),
+          fetch(currName, { cache: "no-store" })
+        ]);
+        if (!prevRes.ok || !currRes.ok) return false;
+        const [prevBuf, currBuf] = await Promise.all([prevRes.arrayBuffer(), currRes.arrayBuffer()]);
+        const prevRaw = readExcelFromArrayBuffer(prevBuf);
+        const currRaw = readExcelFromArrayBuffer(currBuf);
+        $("status").textContent = "Procesando archivos encontrados...";
+        await processData(prevRaw, currRaw);
+        $("status").textContent = `Archivos cargados automáticamente: ${prevName} y ${currName}.`;
+        return true;
+      } catch (err) {
+        console.warn("Auto-load failed", err);
+        return false;
       }
     }
 
@@ -1587,7 +2138,6 @@
 
     $("btnProcess").addEventListener("click", processFiles);
     $("btnExportCSV").addEventListener("click", () => exportCSV(applyFilters()));
-    $("btnReport").addEventListener("click", generateReport);
     $("filterResidual").addEventListener("change", applyFilters);
     $("filterTop4").addEventListener("change", () => {
       const filtered = applyFilters();
@@ -1595,24 +2145,20 @@
       const topSchools = valueOr("filterTop4", "all") === "top4" ? state.top4 : null;
       renderDistributionCharts(topSchools);
       renderFailTables(topSchools);
+      renderRepeatersTable(topSchools);
       renderFailCharts(topSchools);
+      renderFailBilingualPieCharts(topSchools);
+      renderFailDetailGrids(topSchools);
       updateTop4Selectors();
-      renderFailSingleCharts(state.top4[0]);
-    });
-
-    $("failAbsSelect").addEventListener("change", (e) => {
-      renderFailSingleCharts(e.target.value);
-      $("failPctSelect").value = e.target.value;
-    });
-    $("failPctSelect").addEventListener("change", (e) => {
-      renderFailSingleCharts(e.target.value);
-      $("failAbsSelect").value = e.target.value;
     });
 
     document.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-export]");
       if (!btn) return;
       exportTabToPdf(btn.dataset.export);
+    });
+    window.addEventListener("load", () => {
+      tryAutoLoad();
     });
     // Los selectores eliminados no requieren eventos adicionales
   </script>
