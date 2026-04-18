@@ -366,9 +366,38 @@
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      padding: 4px 0;
-      border-bottom: 1px solid #f0e6d8;
+      padding: 6px 8px;
+      border: 1px solid #f0e6d8;
+      border-radius: 8px;
+      background: #fff;
       font-size: 12px;
+      align-items: center;
+    }
+
+    .status-item.shared {
+      border-color: #d7c5ef;
+      background: #f6f0ff;
+    }
+
+    .status-item.lective {
+      border-color: #f1b5b5;
+      background: #fff1f1;
+    }
+
+    .status-item.shared.lective {
+      border-color: #d9a8d9;
+      background: linear-gradient(90deg, #fff1f1 0%, #f6f0ff 100%);
+    }
+
+    .status-item-main {
+      min-width: 0;
+    }
+
+    .status-item-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .pill {
@@ -376,10 +405,12 @@
       padding: 2px 6px;
       border-radius: 10px;
       color: #fff;
+      white-space: nowrap;
     }
     .pill.ok { background: var(--ok); }
     .pill.ko { background: var(--ko); }
     .pill.dual { background: #6a2ca6; }
+    .pill.lective { background: #b02a2a; }
 
     .inline-form {
       margin-top: 8px;
@@ -624,7 +655,7 @@
     <div class="tab-panel" data-panel="planificador">
       <section class="panel">
         <h3>Planificar reuniones de evaluación</h3>
-        <p class="muted">Haz clic en un tramo para crear una reunión. El solapamiento con horarios del profesorado se marca en el listado.</p>
+        <p class="muted">Haz clic en un tramo para crear una reunión. En incompatibilidades, <strong>COINCIDE</strong> marca profesorado que aparece en varias reuniones y <strong>LECTIVA</strong> marca quienes tienen clase en ese momento.</p>
         <div class="row">
           <div>
             <label for="conflictDaySelect">Día para incompatibilidades</label>
@@ -1017,14 +1048,16 @@
       const sel = el('conflictDaySelect');
       const timeInput = el('conflictTime');
       if (!sel) return;
+      const prev = sel.value;
       sel.innerHTML = '';
-      [1,2,3,4,5].forEach(d => {
+      state.days.forEach(d => {
         const opt = document.createElement('option');
         opt.value = String(d);
-        opt.textContent = getDayName(d);
+        opt.textContent = getPlannerDayLabel(d);
         sel.appendChild(opt);
       });
-      if (!sel.value) sel.value = '1';
+      if (prev && state.days.includes(Number(prev))) sel.value = prev;
+      else if (state.days.length) sel.value = String(state.days[0]);
       if (timeInput && !timeInput.value) {
         const first = state.hourSlots.find(s => s.inicio)?.inicio;
         if (first) timeInput.value = first;
@@ -1992,6 +2025,8 @@
       el('meetingHint').textContent = `Tramo día ${tramo.dia} (${tramo.inicio}-${tramo.fin})`;
       el('meetStart').value = tramo.inicio;
       el('meetEnd').value = tramo.fin;
+      const daySel = el('conflictDaySelect');
+      if (daySel) daySel.value = String(tramo.dia);
       const timeInput = el('conflictTime');
       if (timeInput) timeInput.value = tramo.inicio;
       setActiveConflict(String(tramo.dia), timeToMin(tramo.inicio));
@@ -2338,7 +2373,7 @@
         const block = document.createElement('div');
         block.className = 'status-block';
         const groupName = meeting.groupNameOverride || getGroupLabelById(meeting.groupId);
-        const dayName = getDayName(meeting.day);
+        const dayName = getPlannerDayLabel(meeting.day);
         const title = [meeting.teach, groupName].filter(Boolean).join(' ');
         block.innerHTML = `<h5>${title}</h5><div class="muted">${dayName} ${minToTimeStr(timeMin)} (reunión ${meeting.start}-${meeting.end})</div>`;
         list.appendChild(block);
@@ -2361,15 +2396,20 @@
         entries.forEach(([profId, subjects]) => {
           const profName = state.profesorMap[profId]?.nombre || profId;
           const subjectNames = Array.from(subjects).map(id => state.asignaturas[id]?.nombre || id).join(', ');
-          const hasConflict = isProfBusyAtTime(profId, meeting.day, timeMin);
           const isDual = (dualCounts[profId] || 0) > 1;
-          if (!hasConflict && !isDual) return;
+          const hasLectiveClass = isProfLectiveAtTime(profId, meeting.day, timeMin);
+          const lectiveDetails = hasLectiveClass ? getProfLectiveDetailsAtTime(profId, meeting.day, timeMin) : [];
           const item = document.createElement('div');
-          item.className = 'status-item';
-          const pillClass = isDual ? 'dual' : (hasConflict ? 'ko' : 'ok');
-          const pillText = isDual ? 'DUP' : (hasConflict ? 'KO' : 'OK');
-          item.innerHTML = `<div><strong>${profName}</strong><br/><span class="muted">${subjectNames}</span></div>` +
-            `<span class="pill ${pillClass}">${pillText}</span>`;
+          item.className = `status-item${isDual ? ' shared' : ''}${hasLectiveClass ? ' lective' : ''}`;
+          const badges = [];
+          if (isDual) badges.push('<span class="pill dual">COINCIDE</span>');
+          if (hasLectiveClass) badges.push('<span class="pill lective">LECTIVA</span>');
+          const lectiveInfo = lectiveDetails.length
+            ? `<br/><span class="muted">Lectiva ahora: ${lectiveDetails.join(' · ')}</span>`
+            : '';
+          item.innerHTML =
+            `<div class="status-item-main"><strong>${profName}</strong><br/><span class="muted">${subjectNames}</span>${lectiveInfo}</div>` +
+            `<div class="status-item-badges">${badges.join('')}</div>`;
           block.appendChild(item);
         });
       });
@@ -2502,6 +2542,71 @@
         7: 'Domingo'
       };
       return map[dayNum] || `Día ${dayNum}`;
+    }
+
+    function getWeekdayForPlannerDay(day) {
+      const dNum = Number(day);
+      const start = el('evalStartDate')?.value;
+      if (!start) return dNum;
+      const startDate = new Date(start + 'T00:00:00');
+      if (Number.isNaN(startDate.getTime())) return dNum;
+      const target = new Date(startDate);
+      target.setDate(startDate.getDate() + (dNum - 1));
+      return ((target.getDay() + 6) % 7) + 1;
+    }
+
+    function isProfLectiveAtTime(profId, plannerDay, timeMin) {
+      const realWeekDay = getWeekdayForPlannerDay(plannerDay);
+      const acts = state.horariosProf[profId] || [];
+      return acts.some(act => {
+        const t = state.tramoMap[act.tramoId];
+        if (!t || Number(t.dia) !== Number(realWeekDay)) return false;
+        const tStart = timeToMin(t.inicio);
+        const tEnd = timeToMin(t.fin);
+        if (!(timeMin >= tStart && timeMin < tEnd)) return false;
+        return isLectiveWithStudents(act);
+      });
+    }
+
+    function getProfLectiveDetailsAtTime(profId, plannerDay, timeMin) {
+      const realWeekDay = getWeekdayForPlannerDay(plannerDay);
+      const acts = state.horariosProf[profId] || [];
+      const details = [];
+      const seen = new Set();
+      acts.forEach(act => {
+        const t = state.tramoMap[act.tramoId];
+        if (!t || Number(t.dia) !== Number(realWeekDay)) return;
+        const tStart = timeToMin(t.inicio);
+        const tEnd = timeToMin(t.fin);
+        if (!(timeMin >= tStart && timeMin < tEnd)) return;
+        if (!isLectiveWithStudents(act)) return;
+        const asigName = state.asignaturas[act.asignaturaId]?.nombre || act.asignaturaId || 'Sin asignatura';
+        const groups = (act.grupos || [])
+          .map(id => state.grupoMap[id] || { id })
+          .map(g => groupDisplay(g))
+          .filter(Boolean)
+          .join(', ');
+        const label = groups ? `${asigName} | ${groups}` : asigName;
+        if (seen.has(label)) return;
+        seen.add(label);
+        details.push(label);
+      });
+      return details;
+    }
+
+    function isLectiveWithStudents(act) {
+      if (!act || isCompatibleActivity(act)) return false;
+      const groups = act.grupos || [];
+      if (!groups.length) return false;
+      return groups.some(id => {
+        const g = state.grupoMap[id];
+        if (!g) return true;
+        const nivel = String(g.nivel || '').toUpperCase();
+        const ab = String(g.abreviatura || '').toUpperCase();
+        const nm = String(g.nombre || '').toUpperCase();
+        if (nivel === 'GUA') return false;
+        return !ab.includes('GUAR') && !nm.includes('GUARDIA');
+      });
     }
 
     function isProfBusyAtTime(profId, day, timeMin) {
