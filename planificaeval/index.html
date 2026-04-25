@@ -753,6 +753,7 @@
       dirPalette: {},
       profToTramos: {},
       meetings: [],
+      editingMeetingId: null,
       activeMeetingCell: null,
       activeTramoId: null,
       activeConflict: { day: null, timeMin: null },
@@ -2018,6 +2019,7 @@
 
     function openMeetingForm(td) {
       state.activeMeetingCell = td;
+      state.editingMeetingId = null;
       const tramoId = td.getAttribute('data-tramo');
       state.activeTramoId = tramoId;
       openMeetingModal();
@@ -2029,7 +2031,46 @@
       if (daySel) daySel.value = String(tramo.dia);
       const timeInput = el('conflictTime');
       if (timeInput) timeInput.value = tramo.inicio;
+      if (el('meetingRoom')) el('meetingRoom').value = '';
       setActiveConflict(String(tramo.dia), timeToMin(tramo.inicio));
+    }
+
+    function openMeetingEditor(meetingId) {
+      const meeting = state.meetings.find(m => m.id === meetingId);
+      if (!meeting) return;
+      state.editingMeetingId = meetingId;
+      state.activeMeetingCell = null;
+      state.activeTramoId = null;
+      openMeetingModal();
+
+      const daySel = el('conflictDaySelect');
+      if (daySel) daySel.value = String(meeting.day);
+      const timeInput = el('conflictTime');
+      if (timeInput) timeInput.value = meeting.start;
+      setActiveConflict(String(meeting.day), timeToMin(meeting.start));
+
+      const teachSel = el('teachSelect');
+      const groupSel = el('groupSelect');
+      if (teachSel) {
+        teachSel.value = meeting.teach || teachSel.value;
+        populateGroup();
+      }
+      if (groupSel && meeting.groupId) {
+        const exists = Array.from(groupSel.options).some(o => o.value === meeting.groupId);
+        if (exists) {
+          groupSel.value = meeting.groupId;
+        } else if (meeting.groupNameOverride) {
+          const opt = document.createElement('option');
+          opt.value = meeting.groupId;
+          opt.textContent = meeting.groupNameOverride;
+          groupSel.appendChild(opt);
+          groupSel.value = meeting.groupId;
+        }
+      }
+      if (el('meetingRoom')) el('meetingRoom').value = meeting.room || '';
+      el('meetStart').value = meeting.start;
+      el('meetEnd').value = meeting.end;
+      el('meetingHint').textContent = `Editando reunión ${meeting.start}-${meeting.end}`;
     }
 
     function openMeetingModal() {
@@ -2038,6 +2079,7 @@
 
     function closeMeetingModal() {
       state.activeMeetingCell = null;
+      state.editingMeetingId = null;
       el('meetingModal').style.display = 'none';
     }
 
@@ -2089,9 +2131,10 @@
     }
 
     function saveMeeting() {
-      if (!state.activeMeetingCell) return;
-      const tramoId = state.activeMeetingCell.getAttribute('data-tramo');
-      const tramo = state.tramoMap[tramoId];
+      const editing = state.editingMeetingId ? state.meetings.find(m => m.id === state.editingMeetingId) : null;
+      if (!editing && !state.activeMeetingCell) return;
+      const tramoId = state.activeMeetingCell?.getAttribute('data-tramo');
+      const tramo = tramoId ? state.tramoMap[tramoId] : null;
       let groupId = el('groupSelect').value;
       const teach = el('teachSelect').value;
       const room = (el('meetingRoom')?.value || '').trim();
@@ -2109,20 +2152,30 @@
         groupNameOverride = state.combinedGroupLabels[combinedKey] || groupNameOverride;
       }
 
-      const meeting = {
-        id: 'm' + Date.now(),
-        day: tramo.dia,
-        start,
-        end,
-        groupId,
-        teach,
-        level: '',
-        fpType: '',
-        room,
-        groupNameOverride
-      };
-      state.meetings.push(meeting);
+      if (editing) {
+        editing.groupId = groupId;
+        editing.teach = teach;
+        editing.room = room;
+        editing.start = start;
+        editing.end = end;
+        editing.groupNameOverride = groupNameOverride;
+      } else {
+        const meeting = {
+          id: 'm' + Date.now(),
+          day: tramo.dia,
+          start,
+          end,
+          groupId,
+          teach,
+          level: '',
+          fpType: '',
+          room,
+          groupNameOverride
+        };
+        state.meetings.push(meeting);
+      }
       state.activeMeetingCell = null;
+      state.editingMeetingId = null;
       closeMeetingModal();
       renderMeetings();
       if (state.activeConflict.day && state.activeConflict.timeMin !== null) {
@@ -2245,8 +2298,7 @@
       wrap.querySelectorAll('.meeting').forEach(div => {
         div.addEventListener('click', e => {
           if (e.target.classList.contains('del')) return;
-          const td = div.closest('td[data-tramo]');
-          if (td) openMeetingForm(td);
+          openMeetingEditor(div.dataset.meetingId);
         });
         div.addEventListener('dragstart', e => {
           e.dataTransfer.setData('text/plain', div.dataset.meetingId);
@@ -2271,6 +2323,8 @@
       const tramo = state.tramoMap[tramoId];
       if (!tramo) return;
       meeting.day = tramo.dia;
+      meeting.start = tramo.inicio;
+      meeting.end = tramo.fin;
       state.activeTramoId = tramoId;
       renderMeetings();
       if (state.activeConflict.day && state.activeConflict.timeMin !== null) {
@@ -2397,8 +2451,8 @@
           const profName = state.profesorMap[profId]?.nombre || profId;
           const subjectNames = Array.from(subjects).map(id => state.asignaturas[id]?.nombre || id).join(', ');
           const isDual = (dualCounts[profId] || 0) > 1;
-          const hasLectiveClass = isProfLectiveAtTime(profId, meeting.day, timeMin);
-          const lectiveDetails = hasLectiveClass ? getProfLectiveDetailsAtTime(profId, meeting.day, timeMin) : [];
+          const hasLectiveClass = isProfLectiveInMeeting(profId, meeting.day, meeting.start, meeting.end);
+          const lectiveDetails = hasLectiveClass ? getProfLectiveDetailsInMeeting(profId, meeting.day, meeting.start, meeting.end) : [];
           const item = document.createElement('div');
           item.className = `status-item${isDual ? ' shared' : ''}${hasLectiveClass ? ' lective' : ''}`;
           const badges = [];
@@ -2555,21 +2609,31 @@
       return ((target.getDay() + 6) % 7) + 1;
     }
 
-    function isProfLectiveAtTime(profId, plannerDay, timeMin) {
+    function overlapIntervals(aStart, aEnd, bStart, bEnd) {
+      return Math.max(aStart, bStart) < Math.min(aEnd, bEnd);
+    }
+
+    function isProfLectiveInMeeting(profId, plannerDay, meetingStart, meetingEnd) {
       const realWeekDay = getWeekdayForPlannerDay(plannerDay);
+      const mStart = timeToMin(meetingStart);
+      const mEnd = timeToMin(meetingEnd);
+      if (mEnd <= mStart) return false;
       const acts = state.horariosProf[profId] || [];
       return acts.some(act => {
         const t = state.tramoMap[act.tramoId];
         if (!t || Number(t.dia) !== Number(realWeekDay)) return false;
         const tStart = timeToMin(t.inicio);
         const tEnd = timeToMin(t.fin);
-        if (!(timeMin >= tStart && timeMin < tEnd)) return false;
+        if (!overlapIntervals(tStart, tEnd, mStart, mEnd)) return false;
         return isLectiveWithStudents(act);
       });
     }
 
-    function getProfLectiveDetailsAtTime(profId, plannerDay, timeMin) {
+    function getProfLectiveDetailsInMeeting(profId, plannerDay, meetingStart, meetingEnd) {
       const realWeekDay = getWeekdayForPlannerDay(plannerDay);
+      const mStart = timeToMin(meetingStart);
+      const mEnd = timeToMin(meetingEnd);
+      if (mEnd <= mStart) return [];
       const acts = state.horariosProf[profId] || [];
       const details = [];
       const seen = new Set();
@@ -2578,7 +2642,7 @@
         if (!t || Number(t.dia) !== Number(realWeekDay)) return;
         const tStart = timeToMin(t.inicio);
         const tEnd = timeToMin(t.fin);
-        if (!(timeMin >= tStart && timeMin < tEnd)) return;
+        if (!overlapIntervals(tStart, tEnd, mStart, mEnd)) return;
         if (!isLectiveWithStudents(act)) return;
         const asigName = state.asignaturas[act.asignaturaId]?.nombre || act.asignaturaId || 'Sin asignatura';
         const groups = (act.grupos || [])
